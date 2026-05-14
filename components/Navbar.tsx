@@ -13,7 +13,7 @@ export default function Navbar() {
           href="/"
           className="group flex items-center gap-1 transition-all duration-300"
         >
-          <span className="text-xl font-black tracking-tight bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
+          <span className="text-xl font-black tracking-tight text-white">
             Drop
           </span>
           <span className="text-xl font-black tracking-tight text-white">
