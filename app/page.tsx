@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
-  Download, Star, Code, PlayCircle, Camera, Share2,
-  MessageCircle, Zap, Shield, Globe, ChevronDown, Copy, Check,
-  ArrowDown, Play, Sparkles, Clock, FileVideo, Music,
-  AlertCircle, Loader2, ExternalLink, Menu, X as XIcon
+  Download, Sparkles, ArrowRight, Menu, X as XIcon, Loader2,
+  CheckCircle2, AlertCircle, Copy, Check, Play, Clock,
+  PlayCircle, Camera, Share2, MessageCircle, Globe, ChevronRight,
+  Zap, Shield, Flame, Lightbulb, MonitorPlay, Code, ExternalLink,
+  Star, FileVideo, Music, ArrowDown, ChevronDown
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────
@@ -31,7 +32,7 @@ function detectPlatform(url: string): Platform {
   return 'unknown'
 }
 
-const PLATFORM_META: Record<Platform, { label: string; color: string; bg: string; icon: React.FC<{ size?: number; className?: string }> }> = {
+const PLATFORM_META: Record<Platform, { label: string; color: string; bg: string; icon: any }> = {
   youtube: { label: 'YouTube', color: '#ff0000', bg: 'rgba(255,0,0,0.12)', icon: PlayCircle },
   instagram: { label: 'Instagram', color: '#e1306c', bg: 'rgba(225,48,108,0.12)', icon: Camera },
   facebook: { label: 'Facebook', color: '#1877f2', bg: 'rgba(24,119,242,0.12)', icon: Share2 },
@@ -45,7 +46,7 @@ function generateMockVideoInfo(url: string, platform: Platform): VideoInfo {
     youtube: {
       title: 'Amazing Sunset Time-lapse — 4K Cinematic',
       duration: '3:42',
-      thumbnail: 'https://picsum.photos/seed/yt1/640/360',
+      thumbnail: 'https://picsum.photos/seed/yt1/400/225',
       platform: 'youtube',
       formats: ['1080p', '720p', '480p', '360p', 'audio'],
       views: '2.4M views',
@@ -53,28 +54,28 @@ function generateMockVideoInfo(url: string, platform: Platform): VideoInfo {
     instagram: {
       title: 'Instagram Reel — Travel Highlights 2024',
       duration: '0:30',
-      thumbnail: 'https://picsum.photos/seed/ig1/640/360',
+      thumbnail: 'https://picsum.photos/seed/ig1/400/225',
       platform: 'instagram',
       formats: ['720p', '480p', '360p'],
     },
     facebook: {
       title: 'Facebook Video — Community Update',
       duration: '5:15',
-      thumbnail: 'https://picsum.photos/seed/fb1/640/360',
+      thumbnail: 'https://picsum.photos/seed/fb1/400/225',
       platform: 'facebook',
       formats: ['720p', '480p', '360p'],
     },
     twitter: {
       title: 'X Post — Viral Clip of the Week',
       duration: '1:20',
-      thumbnail: 'https://picsum.photos/seed/tw1/640/360',
+      thumbnail: 'https://picsum.photos/seed/tw1/400/225',
       platform: 'twitter',
       formats: ['720p', '480p', '360p'],
     },
     unknown: {
       title: 'Video',
       duration: '–',
-      thumbnail: 'https://picsum.photos/seed/unk1/640/360',
+      thumbnail: 'https://picsum.photos/seed/unk1/400/225',
       platform: 'unknown',
       formats: ['720p', '480p'],
     },
