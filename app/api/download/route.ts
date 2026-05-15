@@ -16,16 +16,49 @@ function detectPlatform(url: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const { url } = await req.json()
-  if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
+  let body: { url?: string }
+
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
+  }
+
+  const { url } = body
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return NextResponse.json({ error: 'URL is required.' }, { status: 400 })
+  }
+
+  // Basic URL validation
+  try {
+    new URL(url)
+  } catch {
+    return NextResponse.json({ error: 'Invalid URL.' }, { status: 400 })
+  }
 
   const platform = detectPlatform(url)
-  const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
-  await supabase.from('download_requests').insert({ url, platform, ip, status: 'pending' })
+  // Insert and grab the row ID so updates hit exactly one row
+  const { data: insertedRow, error: insertError } = await supabase
+    .from('download_requests')
+    .insert({ url, platform, ip, status: 'pending' })
+    .select('id')
+    .single()
+
+  if (insertError) {
+    console.error('Supabase insert error:', insertError)
+    // Non-fatal — continue even if logging fails
+  }
+
+  const rowId = insertedRow?.id
+
+  const updateStatus = async (status: 'success' | 'failed') => {
+    if (!rowId) return
+    await supabase.from('download_requests').update({ status }).eq('id', rowId)
+  }
 
   const COBALT_URL = process.env.COBALT_API_URL
-
   if (!COBALT_URL) {
     return NextResponse.json({ error: 'Cobalt API not configured.' }, { status: 500 })
   }
@@ -45,38 +78,53 @@ export async function POST(req: NextRequest) {
       }),
     })
 
+    if (!cobaltRes.ok) {
+      const text = await cobaltRes.text()
+      console.error('Cobalt non-200:', cobaltRes.status, text)
+      await updateStatus('failed')
+      return NextResponse.json(
+        { error: 'Could not reach download service. Try again.' },
+        { status: 502 }
+      )
+    }
+
     const data = await cobaltRes.json()
     console.log('Cobalt response:', data)
 
     if (data.status === 'error') {
-      await supabase.from('download_requests').update({ status: 'failed' }).eq('url', url)
+      await updateStatus('failed')
       return NextResponse.json(
         { error: data.error?.code ?? 'Could not extract video. Make sure the link is public.' },
         { status: 422 }
       )
     }
 
-    // 'picker' = carousel/multi-item (Instagram etc) — grab first item
-    const downloadUrl = data.status === 'picker'
-      ? data.picker?.[0]?.url
-      : data.url
+    // picker = carousel (Instagram multi-image/video etc) — grab first video item
+    let downloadUrl: string | undefined
+
+    if (data.status === 'picker') {
+      const firstVideo = data.picker?.find((item: any) => item.type === 'video') ?? data.picker?.[0]
+      downloadUrl = firstVideo?.url
+    } else {
+      downloadUrl = data.url
+    }
 
     if (!downloadUrl) {
-      await supabase.from('download_requests').update({ status: 'failed' }).eq('url', url)
+      await updateStatus('failed')
       return NextResponse.json({ error: 'No download link returned.' }, { status: 422 })
     }
 
-    await supabase.from('download_requests').update({ status: 'success' }).eq('url', url)
+    await updateStatus('success')
 
     return NextResponse.json({
       downloadUrl,
-      title: data.filename ?? 'video',
+      title: data.filename ?? data.title ?? platform + ' Video',
       platform,
     })
 
   } catch (err: any) {
     console.error('Download error:', err)
-    await supabase.from('download_requests').update({ status: 'failed' }).eq('url', url)
+    await updateStatus('failed')
     return NextResponse.json({ error: 'Server error. Try again.' }, { status: 500 })
   }
 }
