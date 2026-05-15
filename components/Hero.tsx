@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Link2, Loader2, CheckCircle, XCircle, Play } from 'lucide-react'
+import { Download, Link2, Loader2, CheckCircle, XCircle, Play, X } from 'lucide-react'
 
 const PLATFORMS = [
   { label: 'TikTok', domains: ['tiktok.com'], color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
@@ -26,7 +26,6 @@ export default function Hero() {
   const [result, setResult] = useState<{ downloadUrl: string; title: string; platform: string } | null>(null)
   const [error, setError] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
-  const [downloading, setDownloading] = useState(false)
 
   const activePlatform = url ? detectPlatform(url) : null
 
@@ -68,26 +67,15 @@ export default function Hero() {
     setIsPlaying(false)
   }
 
-  const handleSaveVideo = async () => {
+  // Direct link download — proxy streams straight to browser, no blob buffering
+  const handleSaveVideo = () => {
     if (!result) return
-    setDownloading(true)
-    try {
-      const res = await fetch(proxyUrl(result.downloadUrl))
-      if (!res.ok) throw new Error('Fetch failed')
-      const blob = await res.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = blobUrl
-      a.download = `${result.title ?? 'dropclip-video'}.mp4`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000)
-    } catch {
-      window.open(proxyUrl(result.downloadUrl), '_blank')
-    } finally {
-      setDownloading(false)
-    }
+    const a = document.createElement('a')
+    a.href = proxyUrl(result.downloadUrl)
+    a.download = `${result.title ?? 'dropclip-video'}.mp4`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   return (
@@ -125,6 +113,8 @@ export default function Hero() {
             ? 'border-red-500/60 shadow-red-500/10 shadow-lg'
             : 'border-zinc-700 focus-within:border-violet-500/60 focus-within:shadow-violet-500/10 focus-within:shadow-lg'
         }`}>
+
+          {/* Platform badge or link icon */}
           {activePlatform ? (
             <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
               {activePlatform.label}
@@ -139,7 +129,6 @@ export default function Hero() {
             onChange={e => {
               setUrl(e.target.value)
               setError('')
-              // if they type a new URL after success, reset back to idle
               if (status === 'success') {
                 setStatus('idle')
                 setResult(null)
@@ -151,13 +140,18 @@ export default function Hero() {
             className="flex-1 bg-transparent text-white text-sm md:text-base outline-none placeholder:text-zinc-600"
           />
 
-          {url && status !== 'success' && (
-            <button onClick={handleReset} className="text-zinc-600 hover:text-zinc-400 transition text-lg leading-none">
-              ✕
+          {/* Cancel / clear button — always visible when there's a URL */}
+          {url && (
+            <button
+              onClick={handleReset}
+              className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all duration-200"
+              title="Clear"
+            >
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
 
-          {/* Download button only shows when NOT success */}
+          {/* Fetch button — hidden after success */}
           {status !== 'success' && (
             <button
               onClick={handleFetch}
@@ -239,18 +233,14 @@ export default function Hero() {
               )}
             </div>
 
-            {/* Actions */}
+            {/* Download */}
             <div className="px-4 py-4">
               <button
                 onClick={handleSaveVideo}
-                disabled={downloading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-3 text-sm font-semibold text-white transition"
               >
-                {downloading
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <Download className="h-4 w-4" />
-                }
-                {downloading ? 'Downloading...' : 'Download'}
+                <Download className="h-4 w-4" />
+                Download
               </button>
             </div>
           </div>
