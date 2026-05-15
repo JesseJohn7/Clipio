@@ -14,11 +14,11 @@ export default function Navbar() {
           className="group flex items-center gap-1 transition-all duration-300"
         >
           <span className="text-xl font-black tracking-tight text-white">
-            Drop
+            Clipio
           </span>
 
           <span className="text-xl font-black tracking-tight text-white">
-            Clip
+            
           </span>
         </Link>
 
