@@ -136,7 +136,7 @@ export default function Hero() {
               }
             }}
             onKeyDown={e => e.key === 'Enter' && status !== 'success' && handleFetch()}
-            placeholder="Paste video URL — TikTok, X, Facebook, Instagram..."
+            placeholder="Paste video URL   TikTok, X, Facebook, Instagram..."
             className="flex-1 bg-transparent text-white text-sm md:text-base outline-none placeholder:text-zinc-600"
           />
 
