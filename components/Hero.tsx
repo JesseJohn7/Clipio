@@ -103,7 +103,7 @@ export default function Hero() {
       </h1>
 
       <p className="text-zinc-400 text-base md:text-lg text-center max-w-xl mb-12">
-        Paste a link from TikTok, X, Facebook, Instagram and more — download instantly in full quality.
+       Fast and effortless video downloads from TikTok, Instagram, X, Facebook, and more in full quality.
       </p>
 
       {/* Input Box */}
