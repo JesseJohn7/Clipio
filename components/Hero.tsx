@@ -1,14 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Link2, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Download, Link2, Loader2, CheckCircle, XCircle, Play } from 'lucide-react'
 
 const PLATFORMS = [
   { label: 'TikTok', domains: ['tiktok.com'], color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
   { label: 'X (Twitter)', domains: ['twitter.com', 'x.com'], color: 'text-sky-400 border-sky-500/40 bg-sky-500/10' },
   { label: 'Instagram', domains: ['instagram.com'], color: 'text-fuchsia-400 border-fuchsia-500/40 bg-fuchsia-500/10' },
   { label: 'Facebook', domains: ['facebook.com', 'fb.watch'], color: 'text-blue-400 border-blue-500/40 bg-blue-500/10' },
-  { label: 'YouTube', domains: ['youtube.com', 'youtu.be'], color: 'text-red-400 border-red-500/40 bg-red-500/10' },
 ]
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
@@ -17,11 +16,17 @@ function detectPlatform(url: string) {
   return PLATFORMS.find(p => p.domains.some(d => url.includes(d))) ?? null
 }
 
+function proxyUrl(raw: string) {
+  return `/api/proxy?url=${encodeURIComponent(raw)}`
+}
+
 export default function Hero() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<{ downloadUrl: string; title: string; platform: string } | null>(null)
   const [error, setError] = useState('')
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const activePlatform = url ? detectPlatform(url) : null
 
@@ -29,15 +34,15 @@ export default function Hero() {
     try { new URL(val); return true } catch { return false }
   }
 
-  const handleDownload = async () => {
+  const handleFetch = async () => {
     if (!url.trim() || !isValidUrl(url)) {
       setError('Please paste a valid video URL')
       return
     }
-
     setStatus('loading')
     setError('')
     setResult(null)
+    setIsPlaying(false)
 
     try {
       const res = await fetch('/api/download', {
@@ -45,10 +50,8 @@ export default function Hero() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       })
-
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Download failed')
-
       setResult(data)
       setStatus('success')
     } catch (err: any) {
@@ -62,6 +65,29 @@ export default function Hero() {
     setError('')
     setStatus('idle')
     setResult(null)
+    setIsPlaying(false)
+  }
+
+  const handleSaveVideo = async () => {
+    if (!result) return
+    setDownloading(true)
+    try {
+      const res = await fetch(proxyUrl(result.downloadUrl))
+      if (!res.ok) throw new Error('Fetch failed')
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `${result.title ?? 'dropclip-video'}.mp4`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000)
+    } catch {
+      window.open(proxyUrl(result.downloadUrl), '_blank')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -99,7 +125,6 @@ export default function Hero() {
             ? 'border-red-500/60 shadow-red-500/10 shadow-lg'
             : 'border-zinc-700 focus-within:border-violet-500/60 focus-within:shadow-violet-500/10 focus-within:shadow-lg'
         }`}>
-          {/* Platform badge OR link icon */}
           {activePlatform ? (
             <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
               {activePlatform.label}
@@ -111,31 +136,43 @@ export default function Hero() {
           <input
             type="url"
             value={url}
-            onChange={e => { setUrl(e.target.value); setError(''); setStatus('idle') }}
-            onKeyDown={e => e.key === 'Enter' && handleDownload()}
+            onChange={e => {
+              setUrl(e.target.value)
+              setError('')
+              // if they type a new URL after success, reset back to idle
+              if (status === 'success') {
+                setStatus('idle')
+                setResult(null)
+                setIsPlaying(false)
+              }
+            }}
+            onKeyDown={e => e.key === 'Enter' && status !== 'success' && handleFetch()}
             placeholder="Paste video URL — TikTok, X, Facebook, Instagram..."
             className="flex-1 bg-transparent text-white text-sm md:text-base outline-none placeholder:text-zinc-600"
           />
 
-          {url && (
+          {url && status !== 'success' && (
             <button onClick={handleReset} className="text-zinc-600 hover:text-zinc-400 transition text-lg leading-none">
               ✕
             </button>
           )}
 
-          <button
-            onClick={handleDownload}
-            disabled={status === 'loading' || !url.trim()}
-            className="shrink-0 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {status === 'loading'
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <Download className="h-4 w-4" />
-            }
-            <span className="hidden sm:block">
-              {status === 'loading' ? 'Fetching...' : 'Download'}
-            </span>
-          </button>
+          {/* Download button only shows when NOT success */}
+          {status !== 'success' && (
+            <button
+              onClick={handleFetch}
+              disabled={status === 'loading' || !url.trim()}
+              className="shrink-0 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {status === 'loading'
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Download className="h-4 w-4" />
+              }
+              <span className="hidden sm:block">
+                {status === 'loading' ? 'Fetching...' : 'Download'}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Error */}
@@ -148,56 +185,79 @@ export default function Hero() {
 
         {/* Success Preview Card */}
         {status === 'success' && result && (
-          <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/90 overflow-hidden">
-            {/* Preview header */}
+          <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/90 overflow-hidden shadow-2xl shadow-violet-500/5">
+
+            {/* Card Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm font-medium text-white truncate max-w-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+                <span className="text-sm font-medium text-white truncate">
                   {result.title}
                 </span>
               </div>
-              {activePlatform && (
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color}`}>
-                  {result.platform}
-                </span>
+              {(() => {
+                const p = PLATFORMS.find(p => p.label === result.platform)
+                return p ? (
+                  <span className={`shrink-0 ml-3 text-xs font-semibold px-2.5 py-1 rounded-full border ${p.color}`}>
+                    {result.platform}
+                  </span>
+                ) : null
+              })()}
+            </div>
+
+            {/* Video Player */}
+            <div className="relative bg-black">
+              {!isPlaying ? (
+                <div
+                  className="relative flex items-center justify-center h-64 md:h-80 bg-zinc-950 cursor-pointer group"
+                  onClick={() => setIsPlaying(true)}
+                >
+                  <div className="absolute inset-0 overflow-hidden">
+                    <video
+                      src={proxyUrl(result.downloadUrl)}
+                      className="w-full h-full object-cover blur-xl opacity-30 scale-110"
+                      muted
+                      preload="metadata"
+                    />
+                  </div>
+                  <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm group-hover:bg-white/20 group-hover:scale-110 transition-all duration-300">
+                      <Play className="h-7 w-7 text-white fill-white ml-1" />
+                    </div>
+                    <span className="text-zinc-400 text-xs">Click to preview</span>
+                  </div>
+                </div>
+              ) : (
+                <video
+                  src={proxyUrl(result.downloadUrl)}
+                  controls
+                  autoPlay
+                  className="w-full max-h-80 bg-black object-contain"
+                  preload="auto"
+                  onError={() => setIsPlaying(false)}
+                />
               )}
             </div>
 
-            {/* Video preview */}
-            <div className="p-4">
-              <video
-                src={result.downloadUrl}
-                controls
-                className="w-full rounded-xl max-h-72 bg-black object-contain"
-                preload="metadata"
-              />
-            </div>
-
-            {/* Download button */}
-            <div className="px-4 pb-4 flex gap-3">
-              <a
-                href={result.downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                download
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-2.5 text-sm font-semibold text-white transition"
-              >
-                <Download className="h-4 w-4" />
-                Save Video
-              </a>
+            {/* Actions */}
+            <div className="px-4 py-4">
               <button
-                onClick={handleReset}
-                className="px-4 py-2.5 rounded-xl border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white text-sm transition"
+                onClick={handleSaveVideo}
+                disabled={downloading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                New Download
+                {downloading
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <Download className="h-4 w-4" />
+                }
+                {downloading ? 'Downloading...' : 'Download'}
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Platform chips — highlight active one */}
+      {/* Platform chips */}
       <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
         {PLATFORMS.map(p => {
           const isActive = activePlatform?.label === p.label
@@ -205,9 +265,7 @@ export default function Hero() {
             <span
               key={p.label}
               className={`px-4 py-2 rounded-full border text-xs font-medium transition-all duration-300 cursor-default ${
-                isActive
-                  ? p.color
-                  : 'border-zinc-800 bg-zinc-900/60 text-zinc-500'
+                isActive ? p.color : 'border-zinc-800 bg-zinc-900/60 text-zinc-500'
               }`}
             >
               {p.label}
