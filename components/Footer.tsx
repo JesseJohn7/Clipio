@@ -1,7 +1,7 @@
 import Image from 'next/image'
 
 // ✦ Replace these with your real handles
-const GITHUB_URL = 'https://github.com/YOUR_USERNAME'
+const GITHUB_URL = 'https://github.com/JesseJohn'
 const X_URL = 'https://x.com/YOUR_HANDLE'
 
 export default function Footer() {
