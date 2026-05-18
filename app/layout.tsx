@@ -27,22 +27,22 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/clipio.png",
-    shortcut: "/clipio.png",
-    apple: "/clipio.png",
+    icon: "/clipiodark.png",
+    shortcut: "/clipiodark.png",
+    apple: "/clipiodark.png",
   },
 
   openGraph: {
     title: "Clipio",
     description: "Fast and effortless video downloads in full quality.",
-    images: ["/clipio.png"],
+    images: ["/clipiodark.png"],
   },
 
   twitter: {
     card: "summary_large_image",
     title: "Clipio",
     description: "Download videos instantly in full quality.",
-    images: ["/clipio.png"],
+    images: ["/clipiodark.png"],
   },
 };
 
@@ -64,4 +64,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}git
+}
