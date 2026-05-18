@@ -15,6 +15,11 @@ function detectPlatform(url: string) {
   return 'Unknown'
 }
 
+function buildFilename(platform: string): string {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  return `Clipio-${platform}-${timestamp}.mp4`
+}
+
 export async function POST(req: NextRequest) {
   let body: { url?: string }
 
@@ -29,7 +34,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'URL is required.' }, { status: 400 })
   }
 
-  // Basic URL validation
   try {
     new URL(url)
   } catch {
@@ -39,7 +43,6 @@ export async function POST(req: NextRequest) {
   const platform = detectPlatform(url)
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
-  // Insert and grab the row ID so updates hit exactly one row
   const { data: insertedRow, error: insertError } = await supabase
     .from('download_requests')
     .insert({ url, platform, ip, status: 'pending' })
@@ -48,7 +51,6 @@ export async function POST(req: NextRequest) {
 
   if (insertError) {
     console.error('Supabase insert error:', insertError)
-    // Non-fatal — continue even if logging fails
   }
 
   const rowId = insertedRow?.id
@@ -99,7 +101,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // picker = carousel (Instagram multi-image/video etc) — grab first video item
     let downloadUrl: string | undefined
 
     if (data.status === 'picker') {
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       downloadUrl,
-      title: data.filename ?? data.title ?? platform + ' Video',
+      title: buildFilename(platform),
       platform,
     })
 
