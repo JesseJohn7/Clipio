@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -15,10 +16,8 @@ export default function InstallPrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    // iOS detection
     const isIOS =
       /iphone|ipad|ipod/i.test(navigator.userAgent) &&
       !(window.navigator as any).standalone;
@@ -28,7 +27,6 @@ export default function InstallPrompt() {
       return;
     }
 
-    // Android / Chrome
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -43,7 +41,10 @@ export default function InstallPrompt() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") setShowAndroid(false);
+    if (outcome === "accepted") {
+      setShowAndroid(false);
+      await supabase.from("pwa_installs").insert({ platform: "android" });
+    }
     setDeferredPrompt(null);
   };
 
