@@ -118,27 +118,19 @@ export default function Hero() {
             : 'border-zinc-700 focus-within:border-violet-500/60 focus-within:shadow-violet-500/10 focus-within:shadow-lg'
         }`}>
 
-          {/* ── Platform badge strip (mobile only, shown above input when platform detected) ── */}
-          {activePlatform && (
-            <div className="flex sm:hidden px-3 pt-3">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color}`}>
-                {activePlatform.label}
-              </span>
-            </div>
-          )}
+          {/* ── Single row — works on both mobile and desktop ── */}
+          <div className="flex items-center gap-3 px-3 py-3">
 
-          {/* ── Input row ── */}
-          <div className="flex items-center gap-2 px-3 py-3">
-
-            {/* Platform badge inline (desktop only) */}
+            {/* Link icon or platform badge — shrink-0 so it never collapses */}
             {activePlatform ? (
-              <span className={`hidden sm:inline-flex shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
+              <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
                 {activePlatform.label}
               </span>
             ) : (
               <Link2 className="h-5 w-5 text-zinc-500 shrink-0" />
             )}
 
+            {/* Input — min-w-0 lets it shrink/truncate, never pushes button out */}
             <input
               type="url"
               value={url}
@@ -156,7 +148,7 @@ export default function Hero() {
               className="flex-1 min-w-0 bg-transparent text-white text-sm outline-none placeholder:text-zinc-600"
             />
 
-            {/* Clear button */}
+            {/* Clear button — shrink-0 so it always shows */}
             {url && (
               <button
                 onClick={handleReset}
@@ -167,38 +159,24 @@ export default function Hero() {
               </button>
             )}
 
-            {/* Download button — inline on desktop (sm+), hidden on mobile */}
+            {/* Download button — shrink-0 so it's ALWAYS visible regardless of URL length.
+                Icon-only on small screens to save space, icon + label on sm+ */}
             {status !== 'success' && (
               <button
                 onClick={handleFetch}
                 disabled={status === 'loading' || !url.trim()}
-                className="hidden sm:flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="shrink-0 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 sm:px-5 py-2.5 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {status === 'loading'
                   ? <Loader2 className="h-4 w-4 animate-spin" />
                   : <Download className="h-4 w-4" />
                 }
-                <span>{status === 'loading' ? 'Fetching…' : 'Download'}</span>
+                <span className="hidden sm:block">
+                  {status === 'loading' ? 'Fetching…' : 'Download'}
+                </span>
               </button>
             )}
           </div>
-
-          {/* ── Mobile-only button row ── */}
-          {status !== 'success' && (
-            <div className="flex sm:hidden px-3 pb-3">
-              <button
-                onClick={handleFetch}
-                disabled={status === 'loading' || !url.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {status === 'loading'
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <Download className="h-4 w-4" />
-                }
-                {status === 'loading' ? 'Fetching…' : 'Download'}
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Error */}
