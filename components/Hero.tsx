@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Download, Link2, Loader2, CheckCircle, XCircle, Play, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Download, Link2, Loader2, CheckCircle, XCircle, Play, X, Clipboard } from 'lucide-react'
 
 const PLATFORMS = [
   { label: 'TikTok', domains: ['tiktok.com'], color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
@@ -20,12 +20,53 @@ function proxyUrl(raw: string) {
   return `/api/proxy?url=${encodeURIComponent(raw)}`
 }
 
+function isVideoUrl(val: string) {
+  try {
+    const u = new URL(val)
+    return PLATFORMS.some(p => p.domains.some(d => u.hostname.includes(d)))
+  } catch { return false }
+}
+
 export default function Hero() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<{ downloadUrl: string; title: string; platform: string } | null>(null)
   const [error, setError] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
+  const [clipboardSuggestion, setClipboardSuggestion] = useState('')
+  const [showClipboardBanner, setShowClipboardBanner] = useState(false)
+  const hasCheckedClipboard = useRef(false)
+
+  // Check clipboard on focus
+  useEffect(() => {
+    const checkClipboard = async () => {
+      if (hasCheckedClipboard.current) return
+      if (!navigator.clipboard?.readText) return
+      try {
+        const text = await navigator.clipboard.readText()
+        if (text && isVideoUrl(text.trim())) {
+          setClipboardSuggestion(text.trim())
+          setShowClipboardBanner(true)
+          hasCheckedClipboard.current = true
+        }
+      } catch {
+        // Permission denied or not available — silent fail
+      }
+    }
+
+    // Check on mount
+    checkClipboard()
+
+    // Also check when user comes back to the tab
+    window.addEventListener('focus', checkClipboard)
+    return () => window.removeEventListener('focus', checkClipboard)
+  }, [])
+
+  const handlePasteFromClipboard = () => {
+    setUrl(clipboardSuggestion)
+    setShowClipboardBanner(false)
+    setError('')
+  }
 
   const activePlatform = url ? detectPlatform(url) : null
 
@@ -65,13 +106,14 @@ export default function Hero() {
     setStatus('idle')
     setResult(null)
     setIsPlaying(false)
+    hasCheckedClipboard.current = false
   }
 
   const handleSaveVideo = () => {
     if (!result) return
     const a = document.createElement('a')
     a.href = proxyUrl(result.downloadUrl)
-    a.download = `${result.title ?? 'dropclip-video'}.mp4`
+    a.download = `${result.title ?? 'clipio-video'}.mp4`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -108,20 +150,38 @@ export default function Hero() {
       {/* ── Search Bar ── */}
       <div className="w-full max-w-2xl">
 
-        {/*
-          MOBILE  (< sm): stacked layout — input row on top, button full-width below
-          DESKTOP (≥ sm): single row with input + button side by side
-        */}
+        {/* Clipboard banner */}
+        {showClipboardBanner && (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <Clipboard className="h-4 w-4 text-violet-400 shrink-0" />
+              <span className="text-xs text-violet-300 truncate">
+                Video link copied — paste it?
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handlePasteFromClipboard}
+                className="text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 px-3 py-1.5 rounded-lg transition"
+              >
+                Paste
+              </button>
+              <button
+                onClick={() => setShowClipboardBanner(false)}
+                className="text-zinc-500 hover:text-white transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className={`rounded-2xl border bg-zinc-900/80 backdrop-blur transition-all duration-300 ${
           status === 'error'
             ? 'border-red-500/60 shadow-red-500/10 shadow-lg'
             : 'border-zinc-700 focus-within:border-violet-500/60 focus-within:shadow-violet-500/10 focus-within:shadow-lg'
         }`}>
-
-          {/* ── Single row — works on both mobile and desktop ── */}
           <div className="flex items-center gap-3 px-3 py-3">
-
-            {/* Link icon or platform badge — shrink-0 so it never collapses */}
             {activePlatform ? (
               <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
                 {activePlatform.label}
@@ -130,7 +190,6 @@ export default function Hero() {
               <Link2 className="h-5 w-5 text-zinc-500 shrink-0" />
             )}
 
-            {/* Input — min-w-0 lets it shrink/truncate, never pushes button out */}
             <input
               type="url"
               value={url}
@@ -148,7 +207,6 @@ export default function Hero() {
               className="flex-1 min-w-0 bg-transparent text-white text-sm outline-none placeholder:text-zinc-600"
             />
 
-            {/* Clear button — shrink-0 so it always shows */}
             {url && (
               <button
                 onClick={handleReset}
@@ -159,8 +217,6 @@ export default function Hero() {
               </button>
             )}
 
-            {/* Download button — shrink-0 so it's ALWAYS visible regardless of URL length.
-                Icon-only on small screens to save space, icon + label on sm+ */}
             {status !== 'success' && (
               <button
                 onClick={handleFetch}
@@ -190,8 +246,6 @@ export default function Hero() {
         {/* Success Preview Card */}
         {status === 'success' && result && (
           <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/90 overflow-hidden shadow-2xl shadow-violet-500/5">
-
-            {/* Card Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
               <div className="flex items-center gap-2 min-w-0">
                 <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -209,7 +263,6 @@ export default function Hero() {
               })()}
             </div>
 
-            {/* Video Player */}
             <div className="relative bg-black">
               {!isPlaying ? (
                 <div
@@ -243,7 +296,6 @@ export default function Hero() {
               )}
             </div>
 
-            {/* Download */}
             <div className="px-4 py-4">
               <button
                 onClick={handleSaveVideo}
