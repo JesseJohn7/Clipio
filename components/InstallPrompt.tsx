@@ -18,9 +18,6 @@ export default function InstallPrompt() {
     // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    // Check if dismissed before
-    if (localStorage.getItem("pwa-dismissed")) return;
-
     // iOS detection
     const isIOS =
       /iphone|ipad|ipod/i.test(navigator.userAgent) &&
@@ -54,7 +51,6 @@ export default function InstallPrompt() {
     setDismissed(true);
     setShowAndroid(false);
     setShowIOS(false);
-    localStorage.setItem("pwa-dismissed", "true");
   };
 
   if (dismissed || (!showAndroid && !showIOS)) return null;
