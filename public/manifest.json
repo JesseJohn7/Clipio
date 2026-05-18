@@ -9,17 +9,17 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/clipio.png",
+      "src": "/clipiodark.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/clipio.png",
+      "src": "/clipiodark.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/clipio.png",
+      "src": "/clipiodark.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
