@@ -17,6 +17,14 @@ export const metadata: Metadata = {
   description:
     "Download videos from TikTok, Instagram, X, Facebook, and more instantly in full quality.",
 
+  manifest: "/manifest.json",
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Clipio",
+  },
+
   icons: {
     icon: "/clipio.png",
     shortcut: "/clipio.png",
@@ -25,16 +33,14 @@ export const metadata: Metadata = {
 
   openGraph: {
     title: "Clipio",
-    description:
-      "Fast and effortless video downloads in full quality.",
+    description: "Fast and effortless video downloads in full quality.",
     images: ["/clipio.png"],
   },
 
   twitter: {
     card: "summary_large_image",
     title: "Clipio",
-    description:
-      "Download videos instantly in full quality.",
+    description: "Download videos instantly in full quality.",
     images: ["/clipio.png"],
   },
 };
@@ -49,6 +55,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="theme-color" content="#000000" />
+      </head>
       <body className="min-h-full flex flex-col bg-black text-white">
         {children}
       </body>
