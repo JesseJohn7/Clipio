@@ -67,7 +67,6 @@ export default function Hero() {
     setIsPlaying(false)
   }
 
-  // Direct link download — proxy streams straight to browser, no blob buffering
   const handleSaveVideo = () => {
     if (!result) return
     const a = document.createElement('a')
@@ -106,66 +105,99 @@ export default function Hero() {
         Paste a link from TikTok, X, Facebook, Instagram and download instantly in full quality.
       </p>
 
-      {/* Input Box */}
+      {/* ── Search Bar ── */}
       <div className="w-full max-w-2xl">
-        <div className={`relative flex items-center gap-3 rounded-2xl border bg-zinc-900/80 px-4 py-3 backdrop-blur transition-all duration-300 ${
+
+        {/*
+          MOBILE  (< sm): stacked layout — input row on top, button full-width below
+          DESKTOP (≥ sm): single row with input + button side by side
+        */}
+        <div className={`rounded-2xl border bg-zinc-900/80 backdrop-blur transition-all duration-300 ${
           status === 'error'
             ? 'border-red-500/60 shadow-red-500/10 shadow-lg'
             : 'border-zinc-700 focus-within:border-violet-500/60 focus-within:shadow-violet-500/10 focus-within:shadow-lg'
         }`}>
 
-          {/* Platform badge or link icon */}
-          {activePlatform ? (
-            <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
-              {activePlatform.label}
-            </span>
-          ) : (
-            <Link2 className="h-5 w-5 text-zinc-500 shrink-0" />
-          )}
-
-          <input
-            type="url"
-            value={url}
-            onChange={e => {
-              setUrl(e.target.value)
-              setError('')
-              if (status === 'success') {
-                setStatus('idle')
-                setResult(null)
-                setIsPlaying(false)
-              }
-            }}
-            onKeyDown={e => e.key === 'Enter' && status !== 'success' && handleFetch()}
-            placeholder="Paste video URL -  TikTok, X, Facebook, Instagram..."
-            className="flex-1 bg-transparent text-white text-sm md:text-base outline-none placeholder:text-zinc-600"
-          />
-
-          {/* Cancel / clear button — always visible when there's a URL */}
-          {url && (
-            <button
-              onClick={handleReset}
-              className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all duration-200"
-              title="Clear"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-
-          {/* Fetch button — hidden after success */}
-          {status !== 'success' && (
-            <button
-              onClick={handleFetch}
-              disabled={status === 'loading' || !url.trim()}
-              className="shrink-0 flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {status === 'loading'
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : <Download className="h-4 w-4" />
-              }
-              <span className="hidden sm:block">
-                {status === 'loading' ? 'Fetching...' : 'Download'}
+          {/* ── Platform badge strip (mobile only, shown above input when platform detected) ── */}
+          {activePlatform && (
+            <div className="flex sm:hidden px-3 pt-3">
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color}`}>
+                {activePlatform.label}
               </span>
-            </button>
+            </div>
+          )}
+
+          {/* ── Input row ── */}
+          <div className="flex items-center gap-2 px-3 py-3">
+
+            {/* Platform badge inline (desktop only) */}
+            {activePlatform ? (
+              <span className={`hidden sm:inline-flex shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
+                {activePlatform.label}
+              </span>
+            ) : (
+              <Link2 className="h-5 w-5 text-zinc-500 shrink-0" />
+            )}
+
+            <input
+              type="url"
+              value={url}
+              onChange={e => {
+                setUrl(e.target.value)
+                setError('')
+                if (status === 'success') {
+                  setStatus('idle')
+                  setResult(null)
+                  setIsPlaying(false)
+                }
+              }}
+              onKeyDown={e => e.key === 'Enter' && status !== 'success' && handleFetch()}
+              placeholder="Paste video URL…"
+              className="flex-1 min-w-0 bg-transparent text-white text-sm outline-none placeholder:text-zinc-600"
+            />
+
+            {/* Clear button */}
+            {url && (
+              <button
+                onClick={handleReset}
+                className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all duration-200"
+                title="Clear"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+
+            {/* Download button — inline on desktop (sm+), hidden on mobile */}
+            {status !== 'success' && (
+              <button
+                onClick={handleFetch}
+                disabled={status === 'loading' || !url.trim()}
+                className="hidden sm:flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {status === 'loading'
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <Download className="h-4 w-4" />
+                }
+                <span>{status === 'loading' ? 'Fetching…' : 'Download'}</span>
+              </button>
+            )}
+          </div>
+
+          {/* ── Mobile-only button row ── */}
+          {status !== 'success' && (
+            <div className="flex sm:hidden px-3 pb-3">
+              <button
+                onClick={handleFetch}
+                disabled={status === 'loading' || !url.trim()}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3 text-sm font-semibold text-white transition-all hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {status === 'loading'
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <Download className="h-4 w-4" />
+                }
+                {status === 'loading' ? 'Fetching…' : 'Download'}
+              </button>
+            </div>
           )}
         </div>
 
