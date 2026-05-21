@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ServiceWorkerRegister from "@/components/ServiceWorkerRegister"
 import InstallPrompt from "@/components/InstallPrompt";
 
 const geistSans = Geist({
@@ -62,7 +61,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
       </head>
       <body className="min-h-full flex flex-col bg-black text-white">
-        <ServiceWorkerRegister />
         <InstallPrompt />
         {children}
       </body>
