@@ -27,6 +27,10 @@ function isVideoUrl(val: string) {
   } catch { return false }
 }
 
+function isValidUrl(val: string) {
+  try { new URL(val); return true } catch { return false }
+}
+
 export default function Hero() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<Status>('idle')
@@ -35,60 +39,23 @@ export default function Hero() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [clipboardSuggestion, setClipboardSuggestion] = useState('')
   const [showClipboardBanner, setShowClipboardBanner] = useState(false)
+  const [autoDetectToast, setAutoDetectToast] = useState(false)
   const hasCheckedClipboard = useRef(false)
 
-  // Check clipboard on focus
-  useEffect(() => {
-    const checkClipboard = async () => {
-      if (hasCheckedClipboard.current) return
-      if (!navigator.clipboard?.readText) return
-      try {
-        const text = await navigator.clipboard.readText()
-        if (text && isVideoUrl(text.trim())) {
-          setClipboardSuggestion(text.trim())
-          setShowClipboardBanner(true)
-          hasCheckedClipboard.current = true
-        }
-      } catch {
-        // Permission denied or not available — silent fail
-      }
-    }
-
-    // Check on mount
-    checkClipboard()
-
-    // Also check when user comes back to the tab
-    window.addEventListener('focus', checkClipboard)
-    return () => window.removeEventListener('focus', checkClipboard)
-  }, [])
-
-  const handlePasteFromClipboard = () => {
-    setUrl(clipboardSuggestion)
-    setShowClipboardBanner(false)
-    setError('')
-  }
-
-  const activePlatform = url ? detectPlatform(url) : null
-
-  const isValidUrl = (val: string) => {
-    try { new URL(val); return true } catch { return false }
-  }
-
-  const handleFetch = async () => {
-    if (!url.trim() || !isValidUrl(url)) {
-      setError('Please paste a valid video URL')
-      return
-    }
+  // ✅ Shared fetch function used by both auto and manual
+  const autoFetch = async (pastedUrl: string) => {
+    if (!pastedUrl || !isValidUrl(pastedUrl)) return
     setStatus('loading')
     setError('')
     setResult(null)
     setIsPlaying(false)
+    setShowClipboardBanner(false)
 
     try {
       const res = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: pastedUrl }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Download failed')
@@ -100,6 +67,49 @@ export default function Hero() {
     }
   }
 
+  // ✅ Check clipboard on mount and tab refocus
+  useEffect(() => {
+    const checkClipboard = async () => {
+      if (hasCheckedClipboard.current) return
+      if (!navigator.clipboard?.readText) return
+      try {
+        const text = await navigator.clipboard.readText()
+        if (text && isVideoUrl(text.trim())) {
+          hasCheckedClipboard.current = true
+          setClipboardSuggestion(text.trim())
+          setUrl(text.trim())
+          // Show toast then auto-trigger download
+          setAutoDetectToast(true)
+          setTimeout(() => setAutoDetectToast(false), 3000)
+          autoFetch(text.trim())
+        }
+      } catch {
+        // Permission denied or clipboard empty — silent fail
+      }
+    }
+
+    checkClipboard()
+    window.addEventListener('focus', checkClipboard)
+    return () => window.removeEventListener('focus', checkClipboard)
+  }, [])
+
+  const handlePasteFromClipboard = () => {
+    setUrl(clipboardSuggestion)
+    setShowClipboardBanner(false)
+    setError('')
+    autoFetch(clipboardSuggestion)
+  }
+
+  const activePlatform = url ? detectPlatform(url) : null
+
+  const handleFetch = async () => {
+    if (!url.trim() || !isValidUrl(url)) {
+      setError('Please paste a valid video URL')
+      return
+    }
+    await autoFetch(url.trim())
+  }
+
   const handleReset = () => {
     setUrl('')
     setError('')
@@ -107,6 +117,8 @@ export default function Hero() {
     setResult(null)
     setIsPlaying(false)
     hasCheckedClipboard.current = false
+    setClipboardSuggestion('')
+    setShowClipboardBanner(false)
   }
 
   const handleSaveVideo = () => {
@@ -126,6 +138,17 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="h-[500px] w-[800px] rounded-full bg-violet-600/10 blur-[120px]" />
       </div>
+
+      {/* ✅ Auto-detect toast */}
+      {autoDetectToast && (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 bg-violet-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg"
+          style={{ animation: 'slideDown 0.3s cubic-bezier(.4,0,.2,1)' }}
+        >
+          <Clipboard className="h-4 w-4" />
+          Link detected — downloading automatically...
+        </div>
+      )}
 
       {/* Badge */}
       <div className="mb-6 flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5">
@@ -147,10 +170,10 @@ export default function Hero() {
         Paste a link from TikTok, X, Facebook, Instagram and download instantly in full quality.
       </p>
 
-      {/* ── Search Bar ── */}
+      {/* Search Bar */}
       <div className="w-full max-w-2xl">
 
-        {/* Clipboard banner */}
+        {/* Clipboard banner — fallback if auto-fetch didn't fire */}
         {showClipboardBanner && (
           <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2.5">
             <div className="flex items-center gap-2 min-w-0">
@@ -164,7 +187,7 @@ export default function Hero() {
                 onClick={handlePasteFromClipboard}
                 className="text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 px-3 py-1.5 rounded-lg transition"
               >
-                Paste
+                Paste & Download
               </button>
               <button
                 onClick={() => setShowClipboardBanner(false)}
@@ -203,7 +226,16 @@ export default function Hero() {
                 }
               }}
               onKeyDown={e => e.key === 'Enter' && status !== 'success' && handleFetch()}
-              placeholder="Paste video URL…"
+              // ✅ Auto-trigger on manual paste (Ctrl+V)
+              onPaste={e => {
+                const text = e.clipboardData.getData('text')
+                if (isVideoUrl(text.trim())) {
+                  e.preventDefault()
+                  setUrl(text.trim())
+                  autoFetch(text.trim())
+                }
+              }}
+              placeholder="Paste video URL — downloads automatically…"
               className="flex-1 min-w-0 bg-transparent text-white text-sm outline-none placeholder:text-zinc-600"
             />
 
@@ -296,13 +328,20 @@ export default function Hero() {
               )}
             </div>
 
-            <div className="px-4 py-4">
+            <div className="px-4 py-4 flex gap-3">
               <button
                 onClick={handleSaveVideo}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-3 text-sm font-semibold text-white transition"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-3 text-sm font-semibold text-white transition"
               >
                 <Download className="h-4 w-4" />
-                Download
+                Save Video
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-300 transition"
+              >
+                <X className="h-4 w-4" />
+                New
               </button>
             </div>
           </div>
@@ -325,6 +364,13 @@ export default function Hero() {
           )
         })}
       </div>
+
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translate(-50%, -12px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+      `}</style>
     </section>
   )
 }
