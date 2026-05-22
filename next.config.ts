@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 import withPWAInit from "next-pwa";
-import path from "path";
 
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
   scope: "/",
   runtimeCaching: [
     {
@@ -20,7 +20,6 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  turbopack: {},
   productionBrowserSourceMaps: false,
 };
 
