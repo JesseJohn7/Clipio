@@ -5,7 +5,9 @@ const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
+  scope: "/",
+  sw: "/sw.js",
+  disable: false, // Enable PWA in all environments
 });
 
 const nextConfig: NextConfig = {
