@@ -21,20 +21,33 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     // Already installed as standalone — never show
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
-    if ((window.navigator as any).standalone === true) return;
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      console.log("✓ App already in standalone mode");
+      return;
+    }
+    if ((window.navigator as any).standalone === true) {
+      console.log("✓ App already installed (iOS standalone)");
+      return;
+    }
+
+    console.log("🔍 Checking for PWA install eligibility...");
 
     // Check snooze — if snoozed and not expired, skip for now but re-check on focus
     const checkSnooze = () => {
       const snoozedUntil = localStorage.getItem(SNOOZE_KEY);
-      if (snoozedUntil && Date.now() < parseInt(snoozedUntil)) return false;
+      if (snoozedUntil && Date.now() < parseInt(snoozedUntil)) {
+        console.log("⏳ Install prompt snoozed until:", new Date(parseInt(snoozedUntil)));
+        return false;
+      }
       return true;
     };
 
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    console.log("📱 Detected platform:", isIOS ? "iOS" : "Android/Desktop");
 
     if (isIOS) {
       if (checkSnooze()) {
+        console.log("📲 iOS detected, showing install prompt");
         setShowIOS(true);
         setVisible(true);
       }
@@ -51,18 +64,21 @@ export default function InstallPrompt() {
 
     // Android / Desktop — wait for beforeinstallprompt
     const handler = (e: Event) => {
+      console.log("✅ beforeinstallprompt event fired!");
       e.preventDefault();
       const prompt = e as BeforeInstallPromptEvent;
       promptRef.current = prompt;
       setDeferredPrompt(prompt);
 
       if (checkSnooze()) {
+        console.log("📦 Showing Android install prompt");
         setShowAndroid(true);
         setVisible(true);
       }
     };
 
     window.addEventListener("beforeinstallprompt", handler);
+    console.log("👂 Listening for beforeinstallprompt event...");
 
     // Re-show on tab focus if snooze expired and prompt still available
     const onFocus = () => {

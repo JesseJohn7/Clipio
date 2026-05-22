@@ -1,17 +1,27 @@
 import type { NextConfig } from "next";
 import withPWAInit from "next-pwa";
+import path from "path";
 
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
   scope: "/",
-  sw: "/sw.js",
-  disable: false, // Enable PWA in all environments
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/.*/,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "https-calls",
+        networkTimeoutSeconds: 15,
+      },
+    },
+  ],
 });
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  productionBrowserSourceMaps: false,
 };
 
 export default withPWA(nextConfig as any);
