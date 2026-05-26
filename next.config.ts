@@ -21,6 +21,7 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
+  turbopack : {},
 };
 
 export default withPWA(nextConfig as any);
