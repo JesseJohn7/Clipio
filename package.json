@@ -4,27 +4,26 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
-    "lucide-react": "^1.14.0",
-    "next": "16.2.6",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.2",
     "next-pwa": "^5.6.0",
     "postcss": "^8.5.14",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
-    "@types/next-pwa": "^5.6.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "^15.3.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^5"
   }
