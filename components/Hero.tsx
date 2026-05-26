@@ -425,14 +425,14 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
         </h2>
 
         <p style={{
-          color: '#aaa',
+          color: '#fff',
           fontSize: '13px',
           margin: '0 0 22px',
           lineHeight: 1.65,
           animation: 'clipio-fadein 0.35s ease-out 0.3s both',
         }}>
           Thank you for supporting Clipio.<br />
-          <span style={{ color: '#777' }}>Every naira keeps this free for everyone 💙</span>
+          <span style={{ color: '#ffff' }}>Every naira keeps this free for everyone 💙</span>
         </p>
 
         {/* Status pill */}
