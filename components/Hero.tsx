@@ -295,118 +295,7 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           </>
         ) : (
           /* ── Thank You Screen ── */
-          <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
-            {/* Bouncing circle with orbiting sparks */}
-            <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
-              <div style={{
-                width: '86px',
-                height: '86px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '40px',
-                animation: 'clipio-bounce 0.55s cubic-bezier(0.36,0.07,0.19,0.97)',
-                margin: '0 auto',
-                boxShadow: '0 0 40px rgba(139,92,246,0.4)',
-              }}>
-                🎉
-              </div>
-              {[
-                { emoji: '✨', top: '-12px', left: '50%' },
-                { emoji: '⭐', top: '50%',  left: '-14px' },
-                { emoji: '💫', top: '105%', left: '50%' },
-                { emoji: '🌟', top: '50%',  left: '114%' },
-              ].map((s, i) => (
-                <span
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    fontSize: '15px',
-                    top: s.top,
-                    left: s.left,
-                    transform: 'translate(-50%, -50%)',
-                    animation: `clipio-orbit 0.5s ease-out ${i * 0.07}s both`,
-                    display: 'block',
-                  }}
-                >
-                  {s.emoji}
-                </span>
-              ))}
-            </div>
-
-            <h2 style={{ color: '#fff', fontWeight: 900, fontSize: '24px', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-              You're a legend! 🙏
-            </h2>
-
-            {/* Floating emojis */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', margin: '10px 0 14px' }}>
-              {['❤️', '🙌', '💜', '🔥'].map((emoji, i) => (
-                <span
-                  key={i}
-                  style={{
-                    fontSize: '24px',
-                    display: 'inline-block',
-                    animation: `clipio-float 0.5s ease-out ${i * 0.08}s both`,
-                  }}
-                >
-                  {emoji}
-                </span>
-              ))}
-            </div>
-
-            <p style={{ color: '#666', fontSize: '14px', margin: '0 0 4px' }}>
-              Thank you for supporting Clipio.
-            </p>
-            <p style={{ color: '#383838', fontSize: '12px', margin: '0 0 20px' }}>
-              Every naira keeps this free for everyone 💙
-            </p>
-
-            {/* Status bar */}
-            <div style={{
-              borderRadius: '10px',
-              backgroundColor: '#0a1a0a',
-              border: '1px solid rgba(22,163,74,0.25)',
-              padding: '11px 14px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#4ade80',
-                flexShrink: 0,
-                boxShadow: '0 0 8px #4ade80',
-                animation: 'clipio-pulse 1.4s ease-in-out infinite',
-              }} />
-              <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 600, textAlign: 'left' }}>
-                Support received — servers staying alive ✓
-              </span>
-            </div>
-
-            <button
-              onClick={onClose}
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                border: 'none',
-                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '15px',
-                cursor: 'pointer',
-                outline: 'none',
-                WebkitTapHighlightColor: 'transparent',
-              } as React.CSSProperties}
-            >
-              Back to Clipio 🚀
-            </button>
-          </div>
+          <ThankYouScreen onClose={onClose} />
         )}
       </div>
 
@@ -417,20 +306,180 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           75%  { transform: scale(0.9); }
           100% { transform: scale(1);  opacity: 1; }
         }
-        @keyframes clipio-float {
-          0%   { transform: translateY(18px) scale(0.4); opacity: 0; }
-          100% { transform: translateY(0)    scale(1);   opacity: 1; }
-        }
-        @keyframes clipio-orbit {
-          0%   { transform: translate(-50%,-50%) scale(0); opacity: 0; }
-          65%  { transform: translate(-50%,-50%) scale(1.5); opacity: 1; }
-          100% { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+        @keyframes clipio-fadein {
+          0%   { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
         @keyframes clipio-pulse {
           0%,100% { opacity: 1; }
           50%     { opacity: 0.35; }
         }
       `}</style>
+    </div>
+  )
+}
+
+// ─── Thank You Screen (canvas confetti) ───────────────────────────────────────
+function ThankYouScreen({ onClose }: { onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const dpr = window.devicePixelRatio || 1
+    canvas.width  = canvas.offsetWidth  * dpr
+    canvas.height = canvas.offsetHeight * dpr
+    ctx.scale(dpr, dpr)
+
+    const W = canvas.offsetWidth
+    const H = canvas.offsetHeight
+
+    const colors = ['#a855f7','#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#f43f5e','#fff']
+    const pieces = Array.from({ length: 100 }, () => ({
+      x:  W / 2 + (Math.random() - 0.5) * 20,
+      y:  H * 0.28,
+      vx: (Math.random() - 0.5) * 14,
+      vy: Math.random() * -16 - 2,
+      w:  Math.random() * 9 + 3,
+      h:  Math.random() * 5 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      angle: Math.random() * Math.PI * 2,
+      spin:  (Math.random() - 0.5) * 0.28,
+      opacity: 1,
+    }))
+
+    let raf: number
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H)
+      let alive = false
+      for (const p of pieces) {
+        p.x  += p.vx
+        p.y  += p.vy
+        p.vy += 0.5
+        p.vx *= 0.97
+        p.angle   += p.spin
+        p.opacity -= 0.013
+        if (p.opacity <= 0) continue
+        alive = true
+        ctx.save()
+        ctx.globalAlpha = Math.max(0, p.opacity)
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.angle)
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+        ctx.restore()
+      }
+      if (alive) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return (
+    <div style={{ textAlign: 'center', padding: '6px 0 4px', position: 'relative', minHeight: '320px' }}>
+      {/* Confetti canvas — fills the whole card */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          top: 0, left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          borderRadius: '14px',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Content on top */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Single clean bouncing icon */}
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '38px',
+          animation: 'clipio-bounce 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both',
+          margin: '0 auto 16px',
+          boxShadow: '0 0 40px rgba(139,92,246,0.5), 0 0 80px rgba(139,92,246,0.15)',
+        }}>
+          🎉
+        </div>
+
+        <h2 style={{
+          color: '#fff',
+          fontWeight: 900,
+          fontSize: '22px',
+          margin: '0 0 8px',
+          letterSpacing: '-0.02em',
+          animation: 'clipio-fadein 0.35s ease-out 0.2s both',
+        }}>
+          You're a legend! 🙏
+        </h2>
+
+        <p style={{
+          color: '#555',
+          fontSize: '13px',
+          margin: '0 0 22px',
+          lineHeight: 1.65,
+          animation: 'clipio-fadein 0.35s ease-out 0.3s both',
+        }}>
+          Thank you for supporting Clipio.<br />
+          <span style={{ color: '#333' }}>Every naira keeps this free for everyone 💙</span>
+        </p>
+
+        {/* Status pill */}
+        <div style={{
+          borderRadius: '10px',
+          backgroundColor: '#0a1a0a',
+          border: '1px solid rgba(22,163,74,0.25)',
+          padding: '11px 14px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'clipio-fadein 0.35s ease-out 0.4s both',
+        }}>
+          <div style={{
+            width: '8px', height: '8px',
+            borderRadius: '50%',
+            backgroundColor: '#4ade80',
+            flexShrink: 0,
+            boxShadow: '0 0 8px #4ade80',
+            animation: 'clipio-pulse 1.4s ease-in-out infinite',
+          }} />
+          <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 600 }}>
+            Support received — servers staying alive ✓
+          </span>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: '14px',
+            borderRadius: '12px',
+            border: 'none',
+            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: '15px',
+            cursor: 'pointer',
+            outline: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            animation: 'clipio-fadein 0.35s ease-out 0.45s both',
+          } as React.CSSProperties}
+        >
+          Back to Clipio 🚀
+        </button>
+      </div>
     </div>
   )
 }
