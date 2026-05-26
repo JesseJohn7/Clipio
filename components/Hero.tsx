@@ -542,28 +542,14 @@ export default function Hero() {
   }
 
   const handleSaveVideo = () => {
-  if (!result) return
-
-  // Always show support modal first
-  setShowSupport(true)
-
-  // Prevent multiple clicks causing duplicate downloads
-  if ((window as any).__clipioDownloading) return
-  ;(window as any).__clipioDownloading = true
-
-  // Delay download slightly so modal appears properly on all devices
-  setTimeout(() => {
+    if (!result) return
     const a = document.createElement('a')
     a.href = proxyUrl(result.downloadUrl)
     a.download = `${result.title ?? 'clipio-video'}.mp4`
-
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-
-    ;(window as any).__clipioDownloading = false
-  }, 300)
-}
+  }
 
   return (
     <>
