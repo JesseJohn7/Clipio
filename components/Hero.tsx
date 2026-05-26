@@ -206,7 +206,7 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         {acc.bank}
                       </span>
                     </div>
-                    <span style={{ color: '#3a3a3a', fontSize: '11px' }}>{acc.name}</span>
+                    <span style={{ color: '#888', fontSize: '11px' }}>{acc.name}</span>
                   </div>
 
                   {/* Account number + copy */}
@@ -283,7 +283,7 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                 padding: '10px',
                 background: 'none',
                 border: 'none',
-                color: '#333',
+                color: '#666',
                 fontSize: '12px',
                 cursor: 'pointer',
                 outline: 'none',
@@ -425,14 +425,14 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
         </h2>
 
         <p style={{
-          color: '#555',
+          color: '#aaa',
           fontSize: '13px',
           margin: '0 0 22px',
           lineHeight: 1.65,
           animation: 'clipio-fadein 0.35s ease-out 0.3s both',
         }}>
           Thank you for supporting Clipio.<br />
-          <span style={{ color: '#333' }}>Every naira keeps this free for everyone 💙</span>
+          <span style={{ color: '#777' }}>Every naira keeps this free for everyone 💙</span>
         </p>
 
         {/* Status pill */}
