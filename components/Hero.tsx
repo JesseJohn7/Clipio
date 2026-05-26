@@ -159,7 +159,7 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
               <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '18px', margin: '0 0 6px', lineHeight: 1.3 }}>
                 Support Clipio 🙏
               </h2>
-              <p style={{ color: '#555', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>
+              <p style={{ color: '#fff', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>
                 Clipio is 100% free. A small support keeps<br />the servers alive for everyone.
               </p>
             </div>
