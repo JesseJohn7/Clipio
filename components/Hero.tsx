@@ -436,29 +436,7 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
         </p>
 
         {/* Status pill */}
-        <div style={{
-          borderRadius: '10px',
-          backgroundColor: '#0a1a0a',
-          border: '1px solid rgba(22,163,74,0.25)',
-          padding: '11px 14px',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          animation: 'clipio-fadein 0.35s ease-out 0.4s both',
-        }}>
-          <div style={{
-            width: '8px', height: '8px',
-            borderRadius: '50%',
-            backgroundColor: '#4ade80',
-            flexShrink: 0,
-            boxShadow: '0 0 8px #4ade80',
-            animation: 'clipio-pulse 1.4s ease-in-out infinite',
-          }} />
-          <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 600 }}>
-            Support received — servers staying alive ✓
-          </span>
-        </div>
+        
 
         <button
           onClick={onClose}
