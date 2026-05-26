@@ -455,7 +455,7 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
             animation: 'clipio-fadein 0.35s ease-out 0.45s both',
           } as React.CSSProperties}
         >
-          Back to Clipio 🚀
+          Back to Clipio 
         </button>
       </div>
     </div>
