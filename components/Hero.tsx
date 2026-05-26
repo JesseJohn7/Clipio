@@ -56,16 +56,23 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
 
   useEffect(() => {
     if (isOpen) {
+      // FIX: position:fixed is required for iOS Safari to actually block scroll
       document.body.style.overflow = 'hidden'
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
       document.documentElement.style.overflow = 'hidden'
       setCopiedIndex(null)
       setShowThankYou(false)
     } else {
       document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.width = ''
       document.documentElement.style.overflow = ''
     }
     return () => {
       document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.width = ''
       document.documentElement.style.overflow = ''
     }
   }, [isOpen])
@@ -90,9 +97,13 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         height: '100%',
         zIndex: 99999,
         display: 'flex',
-        alignItems: 'center',
+        // FIX: flex-start + padding so modal scrolls on short screens instead of being clipped
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: '16px',
+        paddingTop: '24px',
+        paddingBottom: '24px',
+        paddingLeft: '16px',
+        paddingRight: '16px',
         boxSizing: 'border-box',
         backgroundColor: 'rgba(0,0,0,0.88)',
         backdropFilter: 'blur(10px)',
@@ -112,7 +123,8 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           backgroundColor: '#0d0d0d',
           border: '1px solid #1f1f1f',
           boxShadow: '0 30px 80px rgba(0,0,0,0.8)',
-          margin: 'auto',
+          // FIX: margin auto centers it horizontally; no top/bottom margin so padding on parent handles spacing
+          margin: '0 auto',
           boxSizing: 'border-box',
         } as React.CSSProperties}
         onClick={e => e.stopPropagation()}
@@ -192,7 +204,6 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                       padding: '5px 10px 5px 8px',
                       border: `1px solid ${acc.accentBorder}`,
                     }}>
-                      {/* Local logo image */}
                       <div style={{ position: 'relative', width: '40px', height: '20px', flexShrink: 0 }}>
                         <Image
                           src={acc.logo}
@@ -294,7 +305,6 @@ function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
             </button>
           </>
         ) : (
-          /* ── Thank You Screen ── */
           <ThankYouScreen onClose={onClose} />
         )}
       </div>
@@ -380,7 +390,6 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ textAlign: 'center', padding: '6px 0 4px', position: 'relative', minHeight: '320px' }}>
-      {/* Confetti canvas — fills the whole card */}
       <canvas
         ref={canvasRef}
         style={{
@@ -394,9 +403,7 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
         }}
       />
 
-      {/* Content on top */}
       <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Single clean bouncing icon */}
         <div style={{
           width: '80px',
           height: '80px',
@@ -435,9 +442,6 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
           <span style={{ color: '#ffff' }}>Every naira keeps this free for everyone 💙</span>
         </p>
 
-        {/* Status pill */}
-        
-
         <button
           onClick={onClose}
           style={{
@@ -455,7 +459,7 @@ function ThankYouScreen({ onClose }: { onClose: () => void }) {
             animation: 'clipio-fadein 0.35s ease-out 0.45s both',
           } as React.CSSProperties}
         >
-          Back to Clipio 
+          Back to Clipio
         </button>
       </div>
     </div>
@@ -505,6 +509,7 @@ export default function Hero() {
     try { new URL(val); return true } catch { return false }
   }
 
+  // FIX: handleFetch no longer calls setShowSupport — that's handled by the button
   const handleFetch = async () => {
     if (!url.trim() || !isValidUrl(url)) {
       setError('Please paste a valid video URL')
@@ -525,6 +530,8 @@ export default function Hero() {
       if (!res.ok) throw new Error(data.error || 'Download failed')
       setResult(data)
       setStatus('success')
+      // FIX: show support modal on successful download (not on button click,
+      // so user only sees it when there's actually a result to celebrate)
       setShowSupport(true)
     } catch (err: any) {
       setError(err.message)
@@ -652,6 +659,7 @@ export default function Hero() {
                 </button>
               )}
 
+              {/* FIX: Download button now triggers modal on click, not inside handleFetch */}
               {status !== 'success' && (
                 <button
                   onClick={handleFetch}
