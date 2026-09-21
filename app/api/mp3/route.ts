@@ -6,22 +6,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const PRO_EMAILS = ['jessejohn260@gmail.com']
-
-async function checkSubscribed(email: string): Promise<boolean> {
-  if (PRO_EMAILS.includes(email.toLowerCase().trim())) return true
-  const { data } = await supabase
-    .from('subscribers')
-    .select('expires_at, status')
-    .eq('email', email.toLowerCase().trim())
-    .eq('status', 'active')
-    .maybeSingle()
-  if (!data) return false
-  return new Date(data.expires_at) > new Date()
-}
-
 export async function POST(req: NextRequest) {
-  let body: { url?: string; email?: string }
+  let body: { url?: string }
 
   try {
     body = await req.json()
@@ -29,18 +15,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const { url, email } = body
+  const { url } = body
 
   if (!url || !url.trim()) {
     return NextResponse.json({ error: 'URL is required.' }, { status: 400 })
-  }
-
-  const subscribed = email ? await checkSubscribed(email) : false
-  if (!subscribed) {
-    return NextResponse.json(
-      { requiresSubscription: true, proOnly: true, platform: 'MP3' },
-      { status: 403 }
-    )
   }
 
   const COBALT_URL = process.env.COBALT_API_URL

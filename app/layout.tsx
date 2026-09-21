@@ -102,21 +102,7 @@ export default function RootLayout({
                   name: 'Free Plan',
                   price: '0',
                   priceCurrency: 'NGN',
-                  description: '3 free video downloads per day',
-                },
-                {
-                  '@type': 'Offer',
-                  name: 'Clipio Pro Monthly',
-                  price: '1000',
-                  priceCurrency: 'NGN',
-                  description: 'Unlimited downloads per month',
-                },
-                {
-                  '@type': 'Offer',
-                  name: 'Clipio Pro Yearly',
-                  price: '10000',
-                  priceCurrency: 'NGN',
-                  description: 'Unlimited downloads per year',
+                  description: 'Unlimited video downloads, completely free',
                 },
               ],
               featureList: [
@@ -125,7 +111,8 @@ export default function RootLayout({
                 'Download Facebook videos',
                 'Download X (Twitter) videos',
                 'Full HD quality downloads',
-                'No sign-up required for free tier',
+                'MP3 audio extraction',
+                'No sign-up required',
               ],
             }),
           }}

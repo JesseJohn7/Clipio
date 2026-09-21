@@ -6,9 +6,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const PRO_EMAILS = ['jessejohn260@gmail.com']
-const FREE_LIMIT = 3
-
 function detectPlatform(url: string) {
   if (url.includes('tiktok.com')) return 'TikTok'
   if (url.includes('twitter.com') || url.includes('x.com')) return 'X (Twitter)'
@@ -21,46 +18,6 @@ function detectPlatform(url: string) {
 function buildFilename(platform: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   return `Clipio-${platform}-${timestamp}.mp4`
-}
-
-async function checkSubscribed(email: string): Promise<boolean> {
-  if (PRO_EMAILS.includes(email.toLowerCase().trim())) return true
-
-  const { data } = await supabase
-    .from('subscribers')
-    .select('expires_at, status')
-    .eq('email', email.toLowerCase().trim())
-    .eq('status', 'active')
-    .maybeSingle()
-
-  if (!data) return false
-  return new Date(data.expires_at) > new Date()
-}
-
-async function checkAndIncrementFree(ip: string): Promise<{ allowed: boolean; remaining: number }> {
-  const today = new Date().toISOString().split('T')[0]
-
-  const { data } = await supabase
-    .from('free_downloads')
-    .select('count')
-    .eq('ip', ip)
-    .eq('date', today)
-    .maybeSingle()
-
-  const currentCount = data?.count ?? 0
-
-  if (currentCount >= FREE_LIMIT) {
-    return { allowed: false, remaining: 0 }
-  }
-
-  await supabase
-    .from('free_downloads')
-    .upsert(
-      { ip, date: today, count: currentCount + 1 },
-      { onConflict: 'ip,date' }
-    )
-
-  return { allowed: true, remaining: FREE_LIMIT - (currentCount + 1) }
 }
 
 // ── Quality type ──────────────────────────────────────────────────────────────
@@ -134,7 +91,7 @@ async function logDownload(url: string, platform: string, ip: string, quality: s
 }
 
 export async function POST(req: NextRequest) {
-  let body: { url?: string; email?: string; quality?: VideoQuality }
+  let body: { url?: string; quality?: VideoQuality }
 
   try {
     body = await req.json()
@@ -142,7 +99,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const { url, email, quality } = body
+  const { url, quality } = body
 
   if (!url || typeof url !== 'string' || !url.trim()) {
     return NextResponse.json({ error: 'URL is required.' }, { status: 400 })
@@ -156,67 +113,22 @@ export async function POST(req: NextRequest) {
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const platform = detectPlatform(url)
-  const subscribed = email ? await checkSubscribed(email) : false
 
-  // ── Pro user: respect their quality choice ────────────────────────────────
-  if (subscribed) {
-    const selectedQuality: VideoQuality =
-      quality && ['1080', '720', '480'].includes(quality) ? quality : '1080'
+  const selectedQuality: VideoQuality =
+    quality && ['1080', '720', '480'].includes(quality) ? quality : '1080'
 
-    const cobaltResult = await fetchFromCobalt(url, selectedQuality)
-
-    if (!cobaltResult.ok) {
-      return NextResponse.json({ error: cobaltResult.error }, { status: cobaltResult.status })
-    }
-
-    await logDownload(url, platform, ip, selectedQuality)
-
-    return NextResponse.json({
-      downloadUrl: cobaltResult.downloadUrl,
-      title: buildFilename(platform),
-      platform,
-      quality: selectedQuality,
-    })
-  }
-
-  // ── Free user: locked to 720p, check daily limit ──────────────────────────
-  const { allowed, remaining } = await checkAndIncrementFree(ip)
-
-  if (!allowed) {
-    return NextResponse.json(
-      { requiresSubscription: true, freeLimit: true },
-      { status: 403 }
-    )
-  }
-
-  const cobaltResult = await fetchFromCobalt(url, '720')
+  const cobaltResult = await fetchFromCobalt(url, selectedQuality)
 
   if (!cobaltResult.ok) {
-    // Undo increment so failed attempt doesn't cost a free download
-    const today = new Date().toISOString().split('T')[0]
-    const { data } = await supabase
-      .from('free_downloads')
-      .select('count')
-      .eq('ip', ip)
-      .eq('date', today)
-      .maybeSingle()
-    if (data && data.count > 0) {
-      await supabase
-        .from('free_downloads')
-        .upsert({ ip, date: today, count: data.count - 1 }, { onConflict: 'ip,date' })
-    }
     return NextResponse.json({ error: cobaltResult.error }, { status: cobaltResult.status })
   }
 
-  await logDownload(url, platform, ip, '720')
+  await logDownload(url, platform, ip, selectedQuality)
 
   return NextResponse.json({
     downloadUrl: cobaltResult.downloadUrl,
     title: buildFilename(platform),
     platform,
-    freeDownloadsRemaining: remaining,
-    quality: '720',
+    quality: selectedQuality,
   })
 }
-
-/* Resolved the quality database issue */
