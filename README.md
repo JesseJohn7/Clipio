@@ -1,9 +1,9 @@
-# Dropclip
+# Clipio
 
 ![GitHub stars](https://img.shields.io/github/stars/JesseJohn7/dropclip?style=social)  
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-Dropclip is a web application that allows users to download videos from various platforms such as TikTok, Instagram, X (formerly Twitter), Facebook, and YouTube in full quality. It provides a simple and fast solution for video downloads, streamlining the process with an easy-to-use interface.
+Clipio is a web application that allows users to download videos from various platforms such as TikTok, Instagram, X (formerly Twitter), Facebook, and YouTube in full quality. It provides a simple and fast solution for video downloads, streamlining the process with an easy-to-use interface.
 
 ## Technologies
 
@@ -19,7 +19,7 @@ To get started with Dropclip, ensure you have Node.js installed. Clone the repos
 
 ```bash
 git clone https://github.com/JesseJohn7/dropclip.git
-cd dropclip
+cd clipio
 npm install
 ```
 
