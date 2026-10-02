@@ -210,7 +210,7 @@ export default function Hero() {
       </h1>
 
       <p className="text-zinc-400 text-base md:text-lg text-center max-w-xl mb-10 md:mb-14">
-        Paste a link from TikTok, X, Instagram or Facebook — download the video or extract MP3, completely free.
+        Paste a link from TikTok, X, Instagram or Facebook  download the video or extract MP3, completely free.
       </p>
 
       {/* Search Bar */}
