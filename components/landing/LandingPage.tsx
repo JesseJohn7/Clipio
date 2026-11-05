@@ -25,7 +25,6 @@ import {
   FaTiktok,
   FaXTwitter,
 } from 'react-icons/fa6'
-import InstallButton from './InstallButton'
 
 /* ---------- shared class strings ---------- */
 
@@ -194,7 +193,6 @@ export default function LandingPage() {
         </nav>
 
         <div className="flex items-center gap-2.5 md:gap-4">
-          {/* desktop-only: GitHub + Install app */}
           <a
             className="hidden items-center gap-[7px] text-[13px] font-medium text-[#b1afbb] transition-colors duration-200 hover:text-white md:inline-flex"
             href="https://github.com/JesseJohn7/Clipio"
@@ -205,10 +203,6 @@ export default function LandingPage() {
             <FaGithub size={16} aria-hidden="true" />
             <span className="hidden lg:inline">Star on GitHub</span>
           </a>
-
-          <div className="hidden md:block">
-            <InstallButton variant="nav" />
-          </div>
 
           <Link
             className="hidden min-h-[39px] items-center justify-center gap-2.5 rounded-[11px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] px-[15px] text-[13px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)] transition duration-200 hover:-translate-y-0.5 hover:brightness-[1.07] hover:shadow-[0_9px_36px_rgba(173,135,255,0.28)] md:inline-flex"
@@ -275,12 +269,10 @@ export default function LandingPage() {
 
           <div className="my-2 h-px bg-white/[0.07]" />
 
-          <InstallButton variant="menu" />
-
           <Link
             href="/app"
             onClick={closeMenu}
-            className="mt-2 flex min-h-12 items-center justify-center gap-2.5 rounded-[14px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] text-[14px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)]"
+            className="flex min-h-12 items-center justify-center gap-2.5 rounded-[14px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] text-[14px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)]"
           >
             Get started <ArrowUpRight size={16} aria-hidden="true" />
           </Link>
