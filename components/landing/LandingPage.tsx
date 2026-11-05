@@ -41,7 +41,7 @@ const iconBox =
 
 /* ---------- data ---------- */
 
-const platforms = ['TikTok', 'Instagram', 'Facebook', 'X / Twitter']
+const platforms = ['TikTok', 'Instagram', 'Facebook', 'X / Twitter,Linkedln']
 
 const steps = [
   {
