@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowDown,
   ArrowRight,
@@ -15,7 +15,21 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react'
-import { FaGithub } from 'react-icons/fa6'
+import {
+  FaFacebook,
+  FaGithub,
+  FaInstagram,
+  FaLinkedin,
+  FaTiktok,
+  FaXTwitter,
+} from 'react-icons/fa6'
+
+/* ---------- PWA types ---------- */
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
+}
 
 /* ---------- shared class strings ---------- */
 
@@ -41,14 +55,21 @@ const iconBox =
 
 /* ---------- data ---------- */
 
-const platforms = ['TikTok', 'Instagram', 'Facebook', 'X / Twitter,Linkedln']
+const platforms = [
+  { name: 'TikTok', icon: FaTiktok },
+  { name: 'Instagram', icon: FaInstagram },
+  { name: 'Facebook', icon: FaFacebook },
+  { name: 'X (Twitter)', icon: FaXTwitter },
+  { name: 'LinkedIn', icon: FaLinkedin },
+]
 
 const steps = [
   {
     number: '01',
     icon: Link2,
     title: 'Copy a video link',
-    description: 'Grab the link to a public video from TikTok, Instagram, Facebook, or X.',
+    description:
+      'Grab the link to a public video from TikTok, Instagram, Facebook, X, or LinkedIn.',
   },
   {
     number: '02',
@@ -87,6 +108,13 @@ const features = [
 export default function LandingPage() {
   const pageRef = useRef<HTMLElement>(null)
 
+  /* PWA install state */
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [installed, setInstalled] = useState(false)
+  const [isIos, setIsIos] = useState(false)
+  const [showHint, setShowHint] = useState(false)
+
+  /* scroll reveal */
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -107,6 +135,55 @@ export default function LandingPage() {
     elements.forEach(element => observer.observe(element))
     return () => observer.disconnect()
   }, [])
+
+  /* PWA install detection */
+  useEffect(() => {
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
+    if (standalone) {
+      setInstalled(true)
+      return
+    }
+
+    const ua = navigator.userAgent
+    const ios =
+      /iphone|ipad|ipod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    setIsIos(ios)
+
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+    }
+    const onInstalled = () => {
+      setInstalled(true)
+      setDeferredPrompt(null)
+    }
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstall)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') setInstalled(true)
+      setDeferredPrompt(null)
+      return
+    }
+    if (isIos) {
+      setShowHint(true)
+      setTimeout(() => setShowHint(false), 7000)
+    }
+  }
+
+  const canShowInstall = !installed && (deferredPrompt !== null || isIos)
 
   return (
     <main
@@ -140,16 +217,44 @@ export default function LandingPage() {
           </a>
         </nav>
 
-        <div className="flex items-center gap-[13px] md:gap-5">
+        <div className="flex items-center gap-[11px] md:gap-4">
           <a
             className="inline-flex items-center gap-[7px] text-[13px] font-medium text-[#b1afbb] transition-colors duration-200 hover:text-white"
             href="https://github.com/JesseJohn7/Clipio"
             target="_blank"
             rel="noreferrer"
+            aria-label="Star on GitHub"
           >
             <FaGithub size={16} aria-hidden="true" />
-            <span className="hidden md:inline">Star on GitHub</span>
+            <span className="hidden lg:inline">Star on GitHub</span>
           </a>
+
+          {/* Install app (PWA) */}
+          {canShowInstall && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={handleInstall}
+                aria-label="Install Clipio app"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-[11px] border border-white/[0.14] bg-white/[0.04] px-[10px] text-[11px] font-semibold text-[#dedce6] transition duration-200 hover:border-[rgba(190,162,255,0.45)] hover:bg-[rgba(167,130,239,0.1)] hover:text-white md:min-h-[39px] md:px-[14px] md:text-[13px]"
+              >
+                <Download size={15} aria-hidden="true" />
+                <span className="hidden sm:inline">Install app</span>
+              </button>
+
+              {showHint && (
+                <div
+                  role="status"
+                  className="absolute top-full right-0 z-10 mt-3 w-[230px] rounded-xl border border-[rgba(190,162,255,0.25)] bg-[rgba(25,24,32,0.98)] p-3 text-left text-[11px] leading-[1.6] text-[#c7c4ce] shadow-[0_14px_40px_rgba(0,0,0,0.45)]"
+                >
+                  <strong className="mb-1 block text-[#f0eef5]">Install on iPhone / iPad</strong>
+                  Tap the <b>Share</b> button in Safari, then choose{' '}
+                  <b>Add to Home Screen</b>.
+                </div>
+              )}
+            </div>
+          )}
+
           <Link
             className="inline-flex min-h-9 items-center justify-center gap-2.5 rounded-[11px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] px-[11px] text-[11px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)] transition duration-200 hover:-translate-y-0.5 hover:brightness-[1.07] hover:shadow-[0_9px_36px_rgba(173,135,255,0.28)] md:min-h-[39px] md:px-[15px] md:text-[13px]"
             href="/app"
@@ -207,20 +312,23 @@ export default function LandingPage() {
           </a>
         </div>
 
+        {/* platform icons */}
         <div
           data-reveal
-          className={`${reveal} mt-[23px] flex flex-wrap items-center justify-center gap-1.5 md:mt-[30px] md:gap-[9px]`}
+          className={`${reveal} mt-[23px] flex flex-wrap items-center justify-center gap-2 md:mt-[30px] md:gap-2.5`}
         >
-          <span className="mb-0.5 w-full text-[11px] text-[#777581] md:mr-[3px] md:mb-0 md:w-auto">
+          <span className="mb-0.5 w-full text-[11px] text-[#777581] md:mr-1 md:mb-0 md:w-auto">
             Works with
           </span>
-          {platforms.map(platform => (
+          {platforms.map(({ name, icon: Icon }) => (
             <span
-              key={platform}
-              className="inline-flex items-center gap-[5px] rounded-lg border border-white/[0.09] px-[7px] py-[5px] text-[9px] text-[#c7c4ce] md:px-[9px] md:py-1.5 md:text-[10px]"
+              key={name}
+              role="img"
+              aria-label={name}
+              title={name}
+              className="grid size-9 place-items-center rounded-[10px] border border-white/[0.09] bg-white/[0.02] text-[#c7c4ce] transition duration-200 hover:-translate-y-0.5 hover:border-[rgba(190,162,255,0.4)] hover:bg-[rgba(167,130,239,0.08)] hover:text-white md:size-10"
             >
-              <Check size={12} aria-hidden="true" className="text-[#b9a1f2]" />
-              {platform}
+              <Icon size={16} aria-hidden="true" />
             </span>
           ))}
         </div>
@@ -448,4 +556,4 @@ export default function LandingPage() {
       </footer>
     </main>
   )
-}
+} 
