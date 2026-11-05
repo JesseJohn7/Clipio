@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@theme {
+  --animate-window-float: window-float 7s ease-in-out infinite;
+  --animate-card-float: card-float 5s ease-in-out infinite;
+
+  @keyframes window-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes card-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(0.4deg); }
+  }
+}

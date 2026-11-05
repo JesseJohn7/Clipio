@@ -1,15 +1,5 @@
-import React from 'react'
-import Navbar from '@/components/Navbar'
-import Hero from '@/components/Hero'
-import Footer from '@/components/Footer'
-const page = () => {
-  return (
-    <>
-      <Navbar />
-      <Hero />
-      <Footer />
-    </>
-  )
-}
+import LandingPage from '@/components/landing/LandingPage'
 
-export default page
+export default function Page() {
+  return <LandingPage />
+}
