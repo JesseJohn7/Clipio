@@ -1,18 +1,22 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport: Viewport = {
+  themeColor: '#09090d',
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://clipio.online'),
   title: {
-    default: 'Clipio — Free Video Downloader for TikTok, Instagram, Facebook & X',
+    default: 'Clipio — Free Video Downloader for TikTok, Instagram, Facebook, X & LinkedIn',
     template: '%s | Clipio',
   },
   description:
-    'Download TikTok, Instagram, Facebook, and X (Twitter) videos for free in full HD quality. No watermark, no sign-up needed. Fast, easy, and free video downloader online.',
+    'Download TikTok, Instagram, Facebook, X (Twitter) and LinkedIn videos for free in full HD quality. No watermark, no sign-up needed. Fast, easy, and free video downloader online.',
   keywords: [
     'video downloader',
     'tiktok downloader',
@@ -23,6 +27,7 @@ export const metadata: Metadata = {
     'facebook video downloader',
     'x video downloader',
     'twitter video downloader',
+    'linkedin video downloader',
     'free video downloader online',
     'download videos online',
     'social media video downloader',
@@ -31,6 +36,15 @@ export const metadata: Metadata = {
   authors: [{ name: 'Clipio', url: 'https://clipio.online' }],
   creator: 'Clipio',
   publisher: 'Clipio',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'Clipio',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
   robots: {
     index: true,
     follow: true,
@@ -47,9 +61,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://clipio.online',
     siteName: 'Clipio',
-    title: 'Clipio — Free Video Downloader for TikTok, Instagram, Facebook & X',
+    title: 'Clipio — Free Video Downloader for TikTok, Instagram, Facebook, X & LinkedIn',
     description:
-      'Download TikTok, Instagram, Facebook, and X videos for free in full HD quality. No watermark. No sign-up.',
+      'Download TikTok, Instagram, Facebook, X and LinkedIn videos for free in full HD quality. No watermark. No sign-up.',
     images: [
       {
         url: '/og-image.png',
@@ -63,7 +77,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Clipio — Free Video Downloader',
     description:
-      'Download TikTok, Instagram, Facebook & X videos for free in full HD. No watermark.',
+      'Download TikTok, Instagram, Facebook, X & LinkedIn videos for free in full HD. No watermark.',
     images: ['/og-image.png'],
     creator: '@Jesse_can_code',
     site: '@Jesse_can_code',
@@ -93,7 +107,7 @@ export default function RootLayout({
               name: 'Clipio',
               url: 'https://clipio.online',
               description:
-                'Free online video downloader for TikTok, Instagram, Facebook and X (Twitter). Download videos in full HD quality with no watermark.',
+                'Free online video downloader for TikTok, Instagram, Facebook, X (Twitter) and LinkedIn. Download videos in full HD quality with no watermark.',
               applicationCategory: 'UtilitiesApplication',
               operatingSystem: 'Any',
               browserRequirements: 'Requires JavaScript',
@@ -111,6 +125,7 @@ export default function RootLayout({
                 'Download Instagram Reels',
                 'Download Facebook videos',
                 'Download X (Twitter) videos',
+                'Download LinkedIn videos',
                 'Full HD quality downloads',
                 'MP3 audio extraction',
                 'No sign-up required',
@@ -120,10 +135,16 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        
+        {/* Catches the browser's install prompt early so the Install app button can use it */}
+        <Script id="capture-install-prompt" strategy="beforeInteractive">
+          {`window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            window.__clipioInstallPrompt = e;
+          });`}
+        </Script>
+
         {children}
-        
-        </body>
+      </body>
     </html>
   )
 }

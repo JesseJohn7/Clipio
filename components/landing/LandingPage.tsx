@@ -10,9 +10,11 @@ import {
   Check,
   Download,
   Link2,
+  Menu,
   Music2,
   ShieldCheck,
   Sparkles,
+  X,
   Zap,
 } from 'lucide-react'
 import {
@@ -23,13 +25,7 @@ import {
   FaTiktok,
   FaXTwitter,
 } from 'react-icons/fa6'
-
-/* ---------- PWA types ---------- */
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
-}
+import InstallButton from './InstallButton'
 
 /* ---------- shared class strings ---------- */
 
@@ -52,6 +48,9 @@ const primaryBtn =
 
 const iconBox =
   'grid shrink-0 place-items-center rounded-[11px] border border-[rgba(190,162,255,0.16)] bg-[rgba(164,129,238,0.09)] text-[#c7b1ff]'
+
+const menuRow =
+  'flex items-center justify-between rounded-xl px-3.5 py-3 text-[14px] font-medium text-[#dedce6] transition-colors hover:bg-white/[0.05] hover:text-white'
 
 /* ---------- data ---------- */
 
@@ -107,12 +106,8 @@ const features = [
 
 export default function LandingPage() {
   const pageRef = useRef<HTMLElement>(null)
-
-  /* PWA install state */
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [installed, setInstalled] = useState(false)
-  const [isIos, setIsIos] = useState(false)
-  const [showHint, setShowHint] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const closeMenu = () => setMenuOpen(false)
 
   /* scroll reveal */
   useEffect(() => {
@@ -136,54 +131,29 @@ export default function LandingPage() {
     return () => observer.disconnect()
   }, [])
 
-  /* PWA install detection */
+  /* mobile menu: Esc to close, close on resize to desktop, lock page scroll */
   useEffect(() => {
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true
-    if (standalone) {
-      setInstalled(true)
-      return
+    if (!menuOpen) return
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    const mq = window.matchMedia('(min-width: 768px)')
+    const onChange = () => {
+      if (mq.matches) setMenuOpen(false)
     }
 
-    const ua = navigator.userAgent
-    const ios =
-      /iphone|ipad|ipod/i.test(ua) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    setIsIos(ios)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    mq.addEventListener('change', onChange)
 
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-    }
-    const onInstalled = () => {
-      setInstalled(true)
-      setDeferredPrompt(null)
-    }
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstall)
-    window.addEventListener('appinstalled', onInstalled)
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-      window.removeEventListener('appinstalled', onInstalled)
+      document.body.style.overflow = prevOverflow
+      document.removeEventListener('keydown', onKey)
+      mq.removeEventListener('change', onChange)
     }
-  }, [])
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      if (outcome === 'accepted') setInstalled(true)
-      setDeferredPrompt(null)
-      return
-    }
-    if (isIos) {
-      setShowHint(true)
-      setTimeout(() => setShowHint(false), 7000)
-    }
-  }
-
-  const canShowInstall = !installed && (deferredPrompt !== null || isIos)
+  }, [menuOpen])
 
   return (
     <main
@@ -203,11 +173,17 @@ export default function LandingPage() {
 
       {/* ================= HEADER ================= */}
       <header className="relative z-[3] mx-auto flex h-[72px] w-[calc(100%_-_32px)] items-center justify-between border-b border-white/[0.065] md:h-[82px] md:w-[min(1180px,calc(100%_-_64px))]">
-        <Link className={`${brand} text-[19px] md:text-[21px]`} href="/" aria-label="Clipio home">
+        <Link
+          className={`${brand} text-[19px] md:text-[21px]`}
+          href="/"
+          aria-label="Clipio home"
+          onClick={closeMenu}
+        >
           <Image src="/clipio.png" alt="" width={32} height={32} priority className="rounded-lg" />
           <span>clipio</span>
         </Link>
 
+        {/* desktop links */}
         <nav className="hidden items-center gap-[34px] md:flex" aria-label="Main navigation">
           <a className="text-[13px] font-medium text-[#b1afbb] transition-colors duration-200 hover:text-white" href="#how-it-works">
             How it works
@@ -217,9 +193,10 @@ export default function LandingPage() {
           </a>
         </nav>
 
-        <div className="flex items-center gap-[11px] md:gap-4">
+        <div className="flex items-center gap-2.5 md:gap-4">
+          {/* desktop-only: GitHub + Install app */}
           <a
-            className="inline-flex items-center gap-[7px] text-[13px] font-medium text-[#b1afbb] transition-colors duration-200 hover:text-white"
+            className="hidden items-center gap-[7px] text-[13px] font-medium text-[#b1afbb] transition-colors duration-200 hover:text-white md:inline-flex"
             href="https://github.com/JesseJohn7/Clipio"
             target="_blank"
             rel="noreferrer"
@@ -229,37 +206,83 @@ export default function LandingPage() {
             <span className="hidden lg:inline">Star on GitHub</span>
           </a>
 
-          {/* Install app (PWA) */}
-          {canShowInstall && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={handleInstall}
-                aria-label="Install Clipio app"
-                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-[11px] border border-white/[0.14] bg-white/[0.04] px-[10px] text-[11px] font-semibold text-[#dedce6] transition duration-200 hover:border-[rgba(190,162,255,0.45)] hover:bg-[rgba(167,130,239,0.1)] hover:text-white md:min-h-[39px] md:px-[14px] md:text-[13px]"
-              >
-                <Download size={15} aria-hidden="true" />
-                <span className="hidden sm:inline">Install app</span>
-              </button>
-
-              {showHint && (
-                <div
-                  role="status"
-                  className="absolute top-full right-0 z-10 mt-3 w-[230px] rounded-xl border border-[rgba(190,162,255,0.25)] bg-[rgba(25,24,32,0.98)] p-3 text-left text-[11px] leading-[1.6] text-[#c7c4ce] shadow-[0_14px_40px_rgba(0,0,0,0.45)]"
-                >
-                  <strong className="mb-1 block text-[#f0eef5]">Install on iPhone / iPad</strong>
-                  Tap the <b>Share</b> button in Safari, then choose{' '}
-                  <b>Add to Home Screen</b>.
-                </div>
-              )}
-            </div>
-          )}
+          <div className="hidden md:block">
+            <InstallButton variant="nav" />
+          </div>
 
           <Link
-            className="inline-flex min-h-9 items-center justify-center gap-2.5 rounded-[11px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] px-[11px] text-[11px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)] transition duration-200 hover:-translate-y-0.5 hover:brightness-[1.07] hover:shadow-[0_9px_36px_rgba(173,135,255,0.28)] md:min-h-[39px] md:px-[15px] md:text-[13px]"
+            className="hidden min-h-[39px] items-center justify-center gap-2.5 rounded-[11px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] px-[15px] text-[13px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)] transition duration-200 hover:-translate-y-0.5 hover:brightness-[1.07] hover:shadow-[0_9px_36px_rgba(173,135,255,0.28)] md:inline-flex"
             href="/app"
           >
             Get started <ArrowUpRight size={15} aria-hidden="true" />
+          </Link>
+
+          {/* hamburger (mobile only) */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            className="grid size-9 place-items-center rounded-[11px] border border-white/[0.14] bg-white/[0.04] text-[#dedce6] transition duration-200 hover:border-[rgba(190,162,255,0.45)] hover:text-white md:hidden"
+          >
+            {menuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+          </button>
+        </div>
+
+        {/* mobile backdrop */}
+        <div
+          aria-hidden="true"
+          onClick={closeMenu}
+          className={`fixed inset-0 -z-10 bg-black/60 backdrop-blur-sm transition-opacity duration-200 md:hidden ${
+            menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        />
+
+        {/* mobile menu panel */}
+        <div
+          id="mobile-menu"
+          inert={!menuOpen}
+          className={`absolute inset-x-0 top-full z-10 mt-2 origin-top rounded-2xl border border-[rgba(190,162,255,0.2)] bg-[rgba(17,17,22,0.98)] p-2 shadow-[0_24px_60px_rgba(0,0,0,0.6)] transition duration-200 md:hidden ${
+            menuOpen
+              ? 'translate-y-0 opacity-100'
+              : 'pointer-events-none -translate-y-2 opacity-0'
+          }`}
+        >
+          <nav aria-label="Mobile navigation" className="flex flex-col">
+            <a className={menuRow} href="#how-it-works" onClick={closeMenu}>
+              How it works
+              <ArrowRight size={15} aria-hidden="true" className="text-[#777481]" />
+            </a>
+            <a className={menuRow} href="#features" onClick={closeMenu}>
+              Why Clipio
+              <ArrowRight size={15} aria-hidden="true" className="text-[#777481]" />
+            </a>
+            <a
+              className={menuRow}
+              href="https://github.com/JesseJohn7/Clipio"
+              target="_blank"
+              rel="noreferrer"
+              onClick={closeMenu}
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <FaGithub size={16} aria-hidden="true" />
+                Star on GitHub
+              </span>
+              <ArrowUpRight size={15} aria-hidden="true" className="text-[#777481]" />
+            </a>
+          </nav>
+
+          <div className="my-2 h-px bg-white/[0.07]" />
+
+          <InstallButton variant="menu" />
+
+          <Link
+            href="/app"
+            onClick={closeMenu}
+            className="mt-2 flex min-h-12 items-center justify-center gap-2.5 rounded-[14px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] text-[14px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)]"
+          >
+            Get started <ArrowUpRight size={16} aria-hidden="true" />
           </Link>
         </div>
       </header>
@@ -556,4 +579,4 @@ export default function LandingPage() {
       </footer>
     </main>
   )
-} 
+}

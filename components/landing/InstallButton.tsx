@@ -56,11 +56,12 @@ function getHint(): Hint {
   }
 }
 
-export default function InstallButton() {
+export default function InstallButton({ variant = 'nav' }: { variant?: 'nav' | 'menu' }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
   const [hint, setHint] = useState<Hint | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const isMenu = variant === 'menu'
 
   /* detect install state + capture the native prompt */
   useEffect(() => {
@@ -94,9 +95,9 @@ export default function InstallButton() {
     }
   }, [])
 
-  /* close popover on outside click / Escape */
+  /* close popover on outside click / Escape (desktop popover only) */
   useEffect(() => {
-    if (!hint) return
+    if (!hint || isMenu) return
     const onDown = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setHint(null)
     }
@@ -109,7 +110,7 @@ export default function InstallButton() {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [hint])
+  }, [hint, isMenu])
 
   const handleClick = async () => {
     if (deferred) {
@@ -126,23 +127,43 @@ export default function InstallButton() {
   if (installed) return null
 
   return (
-    <div ref={wrapRef} className="relative">
-      <button
-        type="button"
-        onClick={handleClick}
-        aria-label="Install Clipio app"
-        className="inline-flex min-h-9 items-center justify-center gap-[7px] rounded-[11px] border border-white/[0.14] bg-white/[0.04] px-[11px] text-[11px] font-semibold text-[#dedce6] transition duration-200 hover:border-[rgba(190,162,255,0.45)] hover:bg-[rgba(167,130,239,0.1)] hover:text-white md:min-h-[39px] md:gap-2 md:px-[14px] md:text-[13px]"
-      >
-        <Download size={15} aria-hidden="true" />
-        <span className="md:hidden">Install</span>
-        <span className="hidden md:inline">Install app</span>
-      </button>
+    <div ref={wrapRef} className={isMenu ? 'w-full' : 'relative'}>
+      {isMenu ? (
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-label="Install Clipio app"
+          className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors hover:bg-white/[0.05]"
+        >
+          <span className="grid size-9 shrink-0 place-items-center rounded-[10px] border border-[rgba(190,162,255,0.2)] bg-[rgba(164,129,238,0.1)] text-[#c7b1ff]">
+            <Download size={16} aria-hidden="true" />
+          </span>
+          <span className="flex flex-col gap-0.5">
+            <strong className="text-[14px] font-medium text-[#f0eef5]">Install app</strong>
+            <small className="text-[11px] text-[#898693]">Add Clipio to your device</small>
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-label="Install Clipio app"
+          className="inline-flex min-h-[39px] items-center justify-center gap-2 rounded-[11px] border border-white/[0.14] bg-white/[0.04] px-[14px] text-[13px] font-semibold text-[#dedce6] transition duration-200 hover:border-[rgba(190,162,255,0.45)] hover:bg-[rgba(167,130,239,0.1)] hover:text-white"
+        >
+          <Download size={15} aria-hidden="true" />
+          <span>Install app</span>
+        </button>
+      )}
 
       {hint && (
         <div
           role="dialog"
           aria-label={hint.title}
-          className="absolute top-full right-0 z-20 mt-3 w-[260px] rounded-xl border border-[rgba(190,162,255,0.25)] bg-[rgba(25,24,32,0.98)] p-3.5 text-left shadow-[0_14px_40px_rgba(0,0,0,0.5)]"
+          className={
+            isMenu
+              ? 'relative mx-1 mt-1 mb-1 rounded-xl border border-[rgba(190,162,255,0.25)] bg-[rgba(255,255,255,0.03)] p-3.5 text-left'
+              : 'absolute top-full right-0 z-20 mt-3 w-[260px] rounded-xl border border-[rgba(190,162,255,0.25)] bg-[rgba(25,24,32,0.98)] p-3.5 text-left shadow-[0_14px_40px_rgba(0,0,0,0.5)]'
+          }
         >
           <button
             type="button"
