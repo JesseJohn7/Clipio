@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isLinkedInUrl, getLinkedInVideo } from '@/lib/extractors/linkedin'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,7 @@ const supabase = createClient(
 )
 
 function detectPlatform(url: string) {
+  if (isLinkedInUrl(url)) return 'LinkedIn'
   if (url.includes('tiktok.com')) return 'TikTok'
   if (url.includes('twitter.com') || url.includes('x.com')) return 'X (Twitter)'
   if (url.includes('facebook.com') || url.includes('fb.watch')) return 'Facebook'
@@ -41,7 +43,7 @@ async function fetchFromCobalt(
       },
       body: JSON.stringify({
         url,
-        videoQuality: quality,   // ← pass quality directly to Cobalt
+        videoQuality: quality,
         filenameStyle: 'pretty',
         tiktokFullAudio: false,
       }),
@@ -83,6 +85,23 @@ async function fetchFromCobalt(
   }
 }
 
+// ── LinkedIn (Cobalt doesn't handle it, so we use our own extractor) ─────────
+async function fetchFromLinkedIn(
+  url: string
+): Promise<{ ok: true; downloadUrl: string } | { ok: false; error: string; status: number }> {
+  try {
+    const data = await getLinkedInVideo(url)
+    return { ok: true, downloadUrl: data.videoUrl }
+  } catch (err: any) {
+    console.error('LinkedIn extract error:', err)
+    return {
+      ok: false,
+      error: err?.message ?? 'Could not extract LinkedIn video. Make sure the post is public.',
+      status: 422,
+    }
+  }
+}
+
 async function logDownload(url: string, platform: string, ip: string, quality: string) {
   const { error } = await supabase
     .from('download_requests')
@@ -117,18 +136,23 @@ export async function POST(req: NextRequest) {
   const selectedQuality: VideoQuality =
     quality && ['1080', '720', '480'].includes(quality) ? quality : '1080'
 
-  const cobaltResult = await fetchFromCobalt(url, selectedQuality)
+  // LinkedIn → own extractor, everything else → Cobalt
+  const result =
+    platform === 'LinkedIn'
+      ? await fetchFromLinkedIn(url)
+      : await fetchFromCobalt(url, selectedQuality)
 
-  if (!cobaltResult.ok) {
-    return NextResponse.json({ error: cobaltResult.error }, { status: cobaltResult.status })
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
-  await logDownload(url, platform, ip, selectedQuality)
+  // LinkedIn serves a single source quality, so log it as 'original'
+  await logDownload(url, platform, ip, platform === 'LinkedIn' ? 'original' : selectedQuality)
 
   return NextResponse.json({
-    downloadUrl: cobaltResult.downloadUrl,
+    downloadUrl: result.downloadUrl,
     title: buildFilename(platform),
     platform,
-    quality: selectedQuality,
+    quality: selectedQuality, // kept so your existing UI types don't break
   })
 }
