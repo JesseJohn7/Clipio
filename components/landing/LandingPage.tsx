@@ -193,7 +193,7 @@ export default function LandingPage() {
         </nav>
 
         <div className="flex items-center gap-2.5 md:gap-4">
-          <a
+        {/*   <a
             className="hidden items-center gap-[7px] text-[13px] font-medium text-[#b1afbb] transition-colors duration-200 hover:text-white md:inline-flex"
             href="https://github.com/JesseJohn7/Clipio"
             target="_blank"
@@ -202,7 +202,7 @@ export default function LandingPage() {
           >
             <FaGithub size={16} aria-hidden="true" />
             <span className="hidden lg:inline">Star on GitHub</span>
-          </a>
+          </a> */}
 
           <Link
             className="hidden min-h-[39px] items-center justify-center gap-2.5 rounded-[11px] border border-[rgba(222,209,255,0.65)] bg-[linear-gradient(135deg,#d6c6ff,#a788f2)] px-[15px] text-[13px] font-bold text-[#171222] shadow-[0_0_28px_rgba(173,135,255,0.14)] transition duration-200 hover:-translate-y-0.5 hover:brightness-[1.07] hover:shadow-[0_9px_36px_rgba(173,135,255,0.28)] md:inline-flex"
@@ -252,19 +252,19 @@ export default function LandingPage() {
               Why Clipio
               <ArrowRight size={15} aria-hidden="true" className="text-[#777481]" />
             </a>
-            <a
+           {/*  <a
               className={menuRow}
               href="https://github.com/JesseJohn7/Clipio"
               target="_blank"
               rel="noreferrer"
               onClick={closeMenu}
             >
-              <span className="inline-flex items-center gap-2.5">
+             { <span className="inline-flex items-center gap-2.5">
                 <FaGithub size={16} aria-hidden="true" />
                 Star on GitHub
-              </span>
-              <ArrowUpRight size={15} aria-hidden="true" className="text-[#777481]" />
-            </a>
+              </span> }
+              <ArrowUpRight size={15} aria-hidden="true" className="text-[#777481]" /> 
+            </a> */}
           </nav>
 
           <div className="my-2 h-px bg-white/[0.07]" />
@@ -559,7 +559,7 @@ export default function LandingPage() {
         <span className="max-w-[130px] text-center text-[11px] text-[#777481] md:max-w-none">
           Made for the clips worth keeping.
         </span>
-        <a
+       {/*  <a
           href="https://github.com/JesseJohn7/Clipio"
           target="_blank"
           rel="noreferrer"
@@ -567,7 +567,7 @@ export default function LandingPage() {
           className="grid size-[34px] place-items-center rounded-[10px] border border-white/[0.09] text-[#aaa7b2] transition duration-200 hover:border-white/25 hover:text-white"
         >
           <FaGithub size={17} aria-hidden="true" />
-        </a>
+        </a> */}
       </footer>
     </main>
   )
