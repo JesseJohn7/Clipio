@@ -551,7 +551,7 @@ export default function LandingPage() {
       </section>
 
       {/* ================= FOOTER ================= */}
-      <footer className="mx-auto flex min-h-[72px] w-[calc(100%_-_32px)] items-center justify-between border-t border-white/[0.07] md:min-h-[82px] md:w-[min(1180px,calc(100%_-_64px))]">
+      <footer className="mx-auto flex min-h-[72px] w-[calc(100%_-_32px)] items-center justify-between gap-3 border-t border-white/[0.07] md:min-h-[82px] md:w-[min(1180px,calc(100%_-_64px))]">
         <Link className={`${brand} text-[18px]`} href="/" aria-label="Clipio home">
           <Image src="/clipio.png" alt="" width={27} height={27} className="rounded-lg" />
           <span>clipio</span>
@@ -559,6 +559,17 @@ export default function LandingPage() {
         <span className="max-w-[130px] text-center text-[11px] text-[#777481] md:max-w-none">
           Made for the clips worth keeping.
         </span>
+        <nav
+          aria-label="Legal"
+          className="flex items-center gap-3 text-[11px] text-[#777481] md:gap-5 md:text-[12px]"
+        >
+          <Link href="/terms" className="transition-colors duration-200 hover:text-white">
+            Terms
+          </Link>
+          <Link href="/privacy" className="transition-colors duration-200 hover:text-white">
+            Privacy
+          </Link>
+        </nav>
        {/*  <a
           href="https://github.com/JesseJohn7/Clipio"
           target="_blank"
