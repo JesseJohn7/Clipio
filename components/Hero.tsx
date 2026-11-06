@@ -1,19 +1,80 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import type { IconType } from 'react-icons'
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaTiktok,
+  FaXTwitter,
+} from 'react-icons/fa6'
 import { Download, Link2, Loader2, CheckCircle, XCircle, Play, X, Clipboard } from 'lucide-react'
 
-const PLATFORMS = [
-  { label: 'TikTok', domains: ['tiktok.com'], color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
-  { label: 'X (Twitter)', domains: ['twitter.com', 'x.com'], color: 'text-sky-400 border-sky-500/40 bg-sky-500/10' },
-  { label: 'Instagram', domains: ['instagram.com'], color: 'text-fuchsia-400 border-fuchsia-500/40 bg-fuchsia-500/10' },
-  { label: 'Facebook', domains: ['facebook.com', 'fb.watch'], color: 'text-blue-400 border-blue-500/40 bg-blue-500/10' },
+type Platform = {
+  label: string
+  domains: string[]
+  color: string
+  icon: IconType
+}
+
+const PLATFORMS: Platform[] = [
+  {
+    label: 'TikTok',
+    domains: ['tiktok.com'],
+    color: 'text-pink-400 border-pink-500/40 bg-pink-500/10',
+    icon: FaTiktok,
+  },
+  {
+    label: 'X (Twitter)',
+    domains: ['twitter.com', 'x.com'],
+    color: 'text-sky-400 border-sky-500/40 bg-sky-500/10',
+    icon: FaXTwitter,
+  },
+  {
+    label: 'Instagram',
+    domains: ['instagram.com'],
+    color: 'text-fuchsia-400 border-fuchsia-500/40 bg-fuchsia-500/10',
+    icon: FaInstagram,
+  },
+  {
+    label: 'Facebook',
+    domains: ['facebook.com', 'fb.watch'],
+    color: 'text-blue-400 border-blue-500/40 bg-blue-500/10',
+    icon: FaFacebook,
+  },
+  {
+    label: 'LinkedIn',
+    domains: ['linkedin.com', 'lnkd.in'],
+    color: 'text-[#4d9de0] border-[#0a66c2]/50 bg-[#0a66c2]/10',
+    icon: FaLinkedin,
+  },
 ]
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
-function detectPlatform(url: string) {
-  return PLATFORMS.find(p => p.domains.some(d => url.includes(d))) ?? null
+/** Parse a URL even if the protocol is missing; returns null if it can't be parsed. */
+function parseHost(raw: string): string | null {
+  const value = raw.trim()
+  if (!value) return null
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, '')
+  } catch {
+    try {
+      return new URL(`https://${value}`).hostname.toLowerCase().replace(/^www\./, '')
+    } catch {
+      return null
+    }
+  }
+}
+
+/** Exact hostname match (so "netflix.com" is not mistaken for "x.com"). */
+function detectPlatform(url: string): Platform | null {
+  const host = parseHost(url)
+  if (!host) return null
+  return (
+    PLATFORMS.find(p => p.domains.some(d => host === d || host.endsWith(`.${d}`))) ?? null
+  )
 }
 
 function proxyUrl(raw: string) {
@@ -22,9 +83,11 @@ function proxyUrl(raw: string) {
 
 function isVideoUrl(val: string) {
   try {
-    const u = new URL(val)
-    return PLATFORMS.some(p => p.domains.some(d => u.hostname.includes(d)))
-  } catch { return false }
+    new URL(val)
+  } catch {
+    return false
+  }
+  return detectPlatform(val) !== null
 }
 
 export default function Hero() {
@@ -210,7 +273,7 @@ export default function Hero() {
       </h1>
 
       <p className="text-zinc-400 text-base md:text-lg text-center max-w-xl mb-10 md:mb-14">
-        Paste a link from TikTok, X, Instagram or Facebook  download the video or extract MP3, completely free.
+        Paste a link from TikTok, X, Instagram, Facebook or LinkedIn — download the video or extract MP3, completely free.
       </p>
 
       {/* Search Bar */}
@@ -244,8 +307,13 @@ export default function Hero() {
         }`}>
           <div className="flex items-center gap-3 px-3 py-3">
             {activePlatform ? (
-              <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${activePlatform.color} transition-all duration-300`}>
-                {activePlatform.label}
+              <span
+                title={activePlatform.label}
+                className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border ${activePlatform.color} transition-all duration-300`}
+              >
+                <activePlatform.icon className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">{activePlatform.label}</span>
+                <span className="sr-only sm:hidden">{activePlatform.label}</span>
               </span>
             ) : (
               <Link2 className="h-5 w-5 text-zinc-500 shrink-0" />
@@ -322,8 +390,13 @@ export default function Hero() {
                 {(() => {
                   const p = PLATFORMS.find(p => p.label === result.platform)
                   return p ? (
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${p.color}`}>
-                      {result.platform}
+                    <span
+                      title={result.platform}
+                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${p.color}`}
+                    >
+                      <p.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">{result.platform}</span>
+                      <span className="sr-only sm:hidden">{result.platform}</span>
                     </span>
                   ) : null
                 })()}
@@ -401,18 +474,23 @@ export default function Hero() {
         )}
       </div>
 
-      {/* Platform chips */}
+      {/* Platform icons */}
       <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
         {PLATFORMS.map(p => {
           const isActive = activePlatform?.label === p.label
           return (
             <span
               key={p.label}
-              className={`px-4 py-2 rounded-full border text-xs font-medium transition-all duration-300 cursor-default ${
-                isActive ? p.color : 'border-zinc-800 bg-zinc-900/60 text-zinc-500'
+              role="img"
+              aria-label={p.label}
+              title={p.label}
+              className={`grid size-11 place-items-center rounded-xl border transition-all duration-300 cursor-default ${
+                isActive
+                  ? `${p.color} scale-110`
+                  : 'border-zinc-800 bg-zinc-900/60 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
               }`}
             >
-              {p.label}
+              <p.icon className="h-5 w-5" aria-hidden="true" />
             </span>
           )
         })}
