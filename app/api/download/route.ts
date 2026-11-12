@@ -157,17 +157,16 @@ export async function POST(req: NextRequest) {
       ? await fetchFromLinkedIn(url)
       : await fetchFromCobalt(url, selectedQuality)
 
-  if (!result.ok) {
+   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status })
+  }
 
-      // This app is video-only: reject photo posts instead of saving an image
+  // This app is video-only: reject photo posts instead of saving an image
   if (result.mediaType === 'image') {
     return NextResponse.json(
       { error: 'This post has no video, only photos. Try a link to a video or Reel.' },
       { status: 422 }
     )
-  }
-  
   }
 
   // LinkedIn serves a single source quality, so log it as 'original'
