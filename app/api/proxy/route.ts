@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+function extensionFor(contentType: string): string {
+  const type = contentType.toLowerCase()
+  if (type.includes('image/jpeg') || type.includes('image/jpg')) return 'jpg'
+  if (type.includes('image/png')) return 'png'
+  if (type.includes('image/webp')) return 'webp'
+  if (type.includes('image/gif')) return 'gif'
+  if (type.includes('image/heic')) return 'heic'
+  if (type.includes('video/webm')) return 'webm'
+  if (type.includes('audio/mpeg')) return 'mp3'
+  return 'mp4'
+}
+
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get('url')
 
@@ -40,19 +52,22 @@ export async function GET(req: NextRequest) {
     const contentRange = upstream.headers.get('content-range')
     const acceptRanges = upstream.headers.get('accept-ranges')
 
+    // Pick the file extension from the REAL content type (image stays image, video stays video)
+    const ext = extensionFor(contentType)
+
     const resHeaders = new Headers({
       'Content-Type': contentType,
       'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'no-store',
       // Tell browser this is a download
-      'Content-Disposition': `attachment; filename="dropclip-video.mp4"`,
+      'Content-Disposition': `attachment; filename="clipio-download.${ext}"`,
     })
 
     if (contentLength) resHeaders.set('Content-Length', contentLength)
     if (contentRange) resHeaders.set('Content-Range', contentRange)
     if (acceptRanges) resHeaders.set('Accept-Ranges', acceptRanges)
 
-    // Stream directly — no buffering, bytes flow straight to the client
+     // Stream directly — no buffering, bytes flow straight to the client
     return new NextResponse(upstream.body, {
       status: upstream.status === 206 ? 206 : 200,
       headers: resHeaders,

@@ -17,9 +17,18 @@ function detectPlatform(url: string) {
   return 'Unknown'
 }
 
-function buildFilename(platform: string): string {
+type MediaType = 'video' | 'image'
+
+type ExtractResult =
+  | { ok: true; downloadUrl: string; mediaType: MediaType }
+  | { ok: false; error: string; status: number }
+
+const IMAGE_EXT = /\.(jpe?g|png|webp|gif|heic|avif)(\?|$)/i
+
+function buildFilename(platform: string, mediaType: MediaType): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  return `Clipio-${platform}-${timestamp}.mp4`
+  const ext = mediaType === 'image' ? 'jpg' : 'mp4'
+  return `Clipio-${platform}-${timestamp}.${ext}`
 }
 
 // ── Quality type ──────────────────────────────────────────────────────────────
@@ -28,7 +37,7 @@ export type VideoQuality = '1080' | '720' | '480'
 async function fetchFromCobalt(
   url: string,
   quality: VideoQuality = '720'
-): Promise<{ ok: true; downloadUrl: string } | { ok: false; error: string; status: number }> {
+): Promise<ExtractResult> {
   const COBALT_URL = process.env.COBALT_API_URL
   if (!COBALT_URL) {
     return { ok: false, error: 'Cobalt API not configured.', status: 500 }
@@ -57,6 +66,9 @@ async function fetchFromCobalt(
 
     const data = await cobaltRes.json()
 
+    // Temporary debug log: shows exactly what Cobalt returned (check Vercel logs)
+    console.log('Cobalt response:', JSON.stringify({ status: data.status, filename: data.filename, picker: data.picker?.map((p: any) => p.type) }))
+
     if (data.status === 'error') {
       return {
         ok: false,
@@ -66,19 +78,24 @@ async function fetchFromCobalt(
     }
 
     let downloadUrl: string | undefined
+    let mediaType: MediaType = 'video'
 
     if (data.status === 'picker') {
-      const firstVideo = data.picker?.find((item: any) => item.type === 'video') ?? data.picker?.[0]
-      downloadUrl = firstVideo?.url
+      // Prefer a real video; otherwise fall back to the first item and detect its type
+      const firstVideo = data.picker?.find((item: any) => item.type === 'video')
+      const chosen = firstVideo ?? data.picker?.[0]
+      downloadUrl = chosen?.url
+      mediaType = chosen?.type === 'photo' || (chosen?.url && IMAGE_EXT.test(chosen.url)) ? 'image' : 'video'
     } else {
       downloadUrl = data.url
+      mediaType = data.filename && IMAGE_EXT.test(data.filename) ? 'image' : 'video'
     }
 
     if (!downloadUrl) {
       return { ok: false, error: 'No download link returned.', status: 422 }
     }
 
-    return { ok: true, downloadUrl }
+    return { ok: true, downloadUrl, mediaType }
   } catch (err: any) {
     console.error('Cobalt fetch error:', err)
     return { ok: false, error: 'Server error. Try again.', status: 500 }
@@ -86,12 +103,10 @@ async function fetchFromCobalt(
 }
 
 // ── LinkedIn (Cobalt doesn't handle it, so we use our own extractor) ─────────
-async function fetchFromLinkedIn(
-  url: string
-): Promise<{ ok: true; downloadUrl: string } | { ok: false; error: string; status: number }> {
+async function fetchFromLinkedIn(url: string): Promise<ExtractResult> {
   try {
     const data = await getLinkedInVideo(url)
-    return { ok: true, downloadUrl: data.videoUrl }
+    return { ok: true, downloadUrl: data.videoUrl, mediaType: 'video' }
   } catch (err: any) {
     console.error('LinkedIn extract error:', err)
     return {
@@ -144,6 +159,15 @@ export async function POST(req: NextRequest) {
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status })
+
+      // This app is video-only: reject photo posts instead of saving an image
+  if (result.mediaType === 'image') {
+    return NextResponse.json(
+      { error: 'This post has no video, only photos. Try a link to a video or Reel.' },
+      { status: 422 }
+    )
+  }
+  
   }
 
   // LinkedIn serves a single source quality, so log it as 'original'
@@ -151,8 +175,9 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     downloadUrl: result.downloadUrl,
-    title: buildFilename(platform),
+    title: buildFilename(platform, result.mediaType),
     platform,
+    mediaType: result.mediaType,
     quality: selectedQuality, // kept so your existing UI types don't break
   })
 }

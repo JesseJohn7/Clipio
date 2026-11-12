@@ -93,10 +93,11 @@ function isVideoUrl(val: string) {
 export default function Hero() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<Status>('idle')
-  const [result, setResult] = useState<{
+    const [result, setResult] = useState<{
     downloadUrl: string
     title: string
     platform: string
+    mediaType?: 'video' | 'image'
     quality?: string
   } | null>(null)
   const [error, setError] = useState('')
@@ -180,12 +181,13 @@ export default function Hero() {
     hasCheckedClipboard.current = false
   }
 
-  const handleSaveVideo = () => {
+   const handleSaveVideo = () => {
     if (!result) return
     setIsSaving(true)
     const a = document.createElement('a')
     a.href = proxyUrl(result.downloadUrl)
-    a.download = `${result.title ?? 'clipio-video'}.mp4`
+    // result.title already includes the correct extension (.mp4 or .jpg)
+    a.download = result.title ?? 'clipio-video.mp4'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
